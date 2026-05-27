@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nexus 1.0 → 2.0 改版方案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+:root{--bg-primary:#1a1a1a;--bg-gradient:linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 50%,#1a1a1a 100%);--card-accent:#FF5722;--card-coral:#FFAB91;--text-primary:#fff;--text-secondary:#B8B8B8;--text-muted:#666;--text-on-accent:#1a1a1a;--divider:rgba(255,255,255,.08);--font-display:"Archivo Black","Noto Sans SC",sans-serif;--font-body:"Space Grotesk","Noto Sans SC",sans-serif;--font-mono:"JetBrains Mono",monospace;--title-size:clamp(2rem,5.5vw,4.5rem);--h2-size:clamp(1.3rem,3vw,2.2rem);--body-size:clamp(.8rem,1.2vw,1.05rem);--small-size:clamp(.65rem,.95vw,.85rem);--tiny-size:clamp(.6rem,.8vw,.75rem);--slide-padding:clamp(1.5rem,4vw,4rem);--ease-out-expo:cubic-bezier(.16,1,.3,1);--duration:.7s}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;overflow-x:hidden;margin:0;padding:0}
+html{scroll-snap-type:y mandatory;scroll-behavior:smooth;background:var(--bg-primary)}
+body{font-family:var(--font-body);color:var(--text-primary);background:var(--bg-gradient);font-size:var(--body-size);line-height:1.6;-webkit-font-smoothing:antialiased}
+.slide{width:100vw;height:100vh;height:100dvh;overflow:hidden;scroll-snap-align:start;display:flex;flex-direction:column;position:relative;padding:var(--slide-padding)}
+.chrome-num{position:absolute;top:clamp(1.2rem,2.5vw,2.5rem);left:clamp(1.5rem,4vw,4rem);font-family:var(--font-display);font-size:clamp(.9rem,1.3vw,1.1rem);letter-spacing:.08em;color:var(--text-secondary)}
+.chrome-nav{position:absolute;top:clamp(1.2rem,2.5vw,2.5rem);right:clamp(1.5rem,4vw,4rem);display:flex;gap:clamp(.8rem,1.8vw,1.8rem);font-size:var(--small-size);color:var(--text-secondary);text-transform:uppercase;letter-spacing:.12em}
+.chrome-nav span{opacity:.4;transition:opacity .3s}
+.chrome-nav span.active{color:var(--card-accent);opacity:1}
+.chrome-section{position:absolute;bottom:clamp(1.2rem,2.5vw,2.5rem);left:clamp(1.5rem,4vw,4rem);font-family:var(--font-display);font-size:clamp(.7rem,1vw,.85rem);letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted)}
+.chrome-brand{position:absolute;bottom:clamp(1.2rem,2.5vw,2.5rem);right:clamp(1.5rem,4vw,4rem);font-family:var(--font-display);font-size:clamp(.65rem,.9vw,.8rem);letter-spacing:.2em;text-transform:uppercase;color:var(--text-muted)}
+.reveal{opacity:0;transform:translateY(30px);transition:opacity var(--duration) var(--ease-out-expo),transform var(--duration) var(--ease-out-expo)}
+.slide.visible .reveal{opacity:1;transform:translateY(0)}
+.slide.visible .reveal.d1{transition-delay:.1s}.slide.visible .reveal.d2{transition-delay:.2s}.slide.visible .reveal.d3{transition-delay:.3s}.slide.visible .reveal.d4{transition-delay:.4s}.slide.visible .reveal.d5{transition-delay:.5s}
+.eyebrow{font-family:var(--font-display);font-size:var(--small-size);letter-spacing:.22em;text-transform:uppercase;color:var(--card-accent);margin-bottom:clamp(.6rem,1.2vw,1rem)}
+.slide-title{font-family:var(--font-display);font-size:var(--h2-size);line-height:1.1;color:var(--text-primary);margin:0 0 clamp(1rem,2vw,1.8rem);font-weight:900;letter-spacing:-.01em}
+.slide-title em{font-style:normal;color:var(--card-accent);font-family:var(--font-display)}
+.slide-content{flex:1;display:flex;flex-direction:column;justify-content:center;max-height:100%;overflow:hidden}
+.focus-card{background:var(--card-accent);color:var(--text-on-accent);border-radius:clamp(8px,1.2vw,14px);padding:clamp(1rem,2vw,1.8rem)}
+.focus-card h4{font-family:var(--font-display);font-size:clamp(.9rem,1.5vw,1.3rem);margin:0 0 clamp(.4rem,.8vw,.8rem);letter-spacing:.02em}
+.focus-card p{margin:0;font-size:var(--body-size);line-height:1.5;opacity:.92}
+.dark-card{background:rgba(255,255,255,.03);border:1px solid var(--divider);border-radius:clamp(8px,1.2vw,14px);padding:clamp(1rem,1.8vw,1.6rem)}
+.dark-card h4{font-family:var(--font-display);font-size:clamp(.85rem,1.4vw,1.15rem);margin:0 0 clamp(.4rem,.8vw,.8rem);color:var(--text-primary)}
+.dark-card p{margin:0;font-size:var(--body-size);line-height:1.5;color:var(--text-secondary)}
+.cover{background:var(--bg-gradient);padding-left:clamp(2rem,6vw,6rem);padding-right:clamp(2rem,6vw,6rem)}
+.cover-grid{display:grid;grid-template-columns:1fr clamp(220px,30vw,380px);gap:clamp(1.5rem,4vw,4rem);align-items:center;flex:1}
+.cover-eyebrow{font-family:var(--font-display);font-size:clamp(.75rem,1vw,.95rem);letter-spacing:.3em;text-transform:uppercase;color:var(--card-accent);margin-bottom:clamp(1rem,2vw,2rem)}
+.cover-title{font-family:var(--font-display);font-size:clamp(2.2rem,6.5vw,5.2rem);line-height:.98;margin:0 0 clamp(1rem,2vw,1.8rem);letter-spacing:-.015em}
+.cover-title span{color:var(--card-accent)}
+.cover-sub{font-size:clamp(.95rem,1.6vw,1.35rem);color:var(--text-secondary);max-width:38ch;line-height:1.55;margin-bottom:clamp(1.5rem,3vw,2.5rem)}
+.cover-meta{display:flex;flex-wrap:wrap;gap:clamp(.6rem,1.5vw,1.5rem);font-family:var(--font-mono);font-size:var(--small-size);color:var(--text-muted)}
+.cover-meta span{display:inline-flex;align-items:center;gap:.4em}
+.cover-meta span::before{content:"";width:6px;height:6px;background:var(--card-accent);border-radius:50%}
+.cover-card{background:var(--card-accent);color:var(--text-on-accent);border-radius:clamp(10px,1.5vw,18px);padding:clamp(1.2rem,2.5vw,2.2rem);aspect-ratio:4/5;max-height:60vh;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.cover-card::after{content:"";position:absolute;inset:auto -20% -30% auto;width:70%;height:70%;background:radial-gradient(circle,rgba(255,255,255,.18) 0%,transparent 60%)}
+.cover-card .label{font-family:var(--font-mono);font-size:clamp(.65rem,.9vw,.8rem);letter-spacing:.18em;text-transform:uppercase;opacity:.7}
+.cover-card .quote{font-family:var(--font-display);font-size:clamp(1.1rem,2.2vw,1.8rem);line-height:1.15;margin:0}
+.cover-card .author{font-size:var(--small-size);font-weight:500;opacity:.85}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:clamp(1rem,2vw,2rem);flex:1;align-items:stretch;min-height:0}
+.col-block{display:flex;flex-direction:column;gap:clamp(.6rem,1.2vw,1rem);min-height:0}
+.col-block-title{font-family:var(--font-display);font-size:clamp(.75rem,1vw,.95rem);letter-spacing:.2em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:.6rem}
+.col-block-title::before{content:"";width:24px;height:2px;background:var(--card-accent)}
+.compare-table{width:100%;border-collapse:collapse;font-size:var(--body-size)}
+.compare-table th,.compare-table td{text-align:left;padding:clamp(.5rem,1vw,.85rem) clamp(.6rem,1.2vw,1rem);border-bottom:1px solid var(--divider);vertical-align:top;line-height:1.45}
+.compare-table th{font-family:var(--font-display);font-size:var(--small-size);letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);border-bottom-color:rgba(255,255,255,.18)}
+.compare-table td:first-child{font-family:var(--font-display);color:var(--text-primary);font-size:clamp(.78rem,1.1vw,.95rem);width:18%;letter-spacing:.02em}
+.compare-table td.old{color:var(--text-secondary);width:36%}
+.compare-table td.new{color:var(--text-primary);width:46%}
+.compare-table td.new strong{color:var(--card-accent);font-weight:700;font-family:var(--font-display)}
+.compare-table tr:last-child td{border-bottom:none}
+.problem-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(.8rem,1.5vw,1.4rem);flex:1;min-height:0}
+.problem-card{background:rgba(255,255,255,.03);border:1px solid var(--divider);border-radius:clamp(8px,1.2vw,14px);padding:clamp(1rem,1.8vw,1.6rem);display:flex;flex-direction:column;gap:clamp(.4rem,.8vw,.8rem);min-height:0}
+.problem-card .pn{font-family:var(--font-display);color:var(--card-accent);font-size:clamp(.75rem,1vw,.9rem);letter-spacing:.15em}
+.problem-card h4{font-family:var(--font-display);font-size:clamp(.95rem,1.4vw,1.2rem);margin:0;color:var(--text-primary);line-height:1.2}
+.problem-card p{margin:0;color:var(--text-secondary);font-size:var(--body-size);line-height:1.5}
+.change-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(1.2rem,2.5vw,2.5rem);flex:1;min-height:0;align-items:stretch}
+.change-focus{background:var(--card-accent);color:var(--text-on-accent);border-radius:clamp(10px,1.5vw,18px);padding:clamp(1.2rem,2.5vw,2.2rem);display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.change-focus::after{content:"";position:absolute;bottom:-30%;right:-20%;width:60%;height:60%;background:radial-gradient(circle,rgba(255,255,255,.15) 0%,transparent 60%);pointer-events:none}
+.change-focus .pn{font-family:var(--font-display);font-size:clamp(2.5rem,5vw,4.5rem);line-height:1;letter-spacing:-.03em}
+.change-focus .pn small{display:block;font-family:var(--font-mono);font-size:clamp(.7rem,1vw,.85rem);font-weight:400;letter-spacing:.2em;margin-bottom:clamp(.5rem,1vw,.8rem);opacity:.85;text-transform:uppercase}
+.change-focus h3{font-family:var(--font-display);font-size:clamp(1.2rem,2.2vw,1.8rem);line-height:1.15;margin:clamp(1rem,2vw,1.5rem) 0 clamp(.8rem,1.5vw,1.2rem);letter-spacing:-.01em}
+.change-focus .tag{font-family:var(--font-mono);font-size:var(--small-size);background:var(--bg-primary);color:var(--card-accent);display:inline-block;padding:.3em .7em;border-radius:999px;letter-spacing:.08em;text-transform:uppercase}
+.change-body{display:flex;flex-direction:column;gap:clamp(.6rem,1.2vw,1rem);min-height:0;overflow:hidden}
+.change-body h5{font-family:var(--font-display);font-size:clamp(.78rem,1.05vw,.95rem);letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);margin:0;display:flex;align-items:center;gap:.6rem}
+.change-body h5::before{content:"";width:20px;height:2px;background:var(--card-accent)}
+.change-body p,.change-body li{margin:0;color:var(--text-secondary);font-size:var(--body-size);line-height:1.55}
+.change-body strong{color:var(--text-primary)}
+.change-body ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:clamp(.3rem,.6vw,.5rem)}
+.change-body ul li::marker{color:var(--card-accent)}
+.flow-wrap{display:flex;flex-direction:column;gap:clamp(1rem,2vw,1.8rem);flex:1;justify-content:center}
+.flow-row{display:grid;grid-template-columns:clamp(4rem,8vw,8rem) 1fr;gap:clamp(.8rem,1.5vw,1.5rem);align-items:center}
+.flow-tag{font-family:var(--font-display);font-size:clamp(.9rem,1.5vw,1.4rem);letter-spacing:.05em;color:var(--text-muted)}
+.flow-tag.now{color:var(--card-accent)}
+.flow-chain{display:flex;align-items:center;gap:clamp(.4rem,.8vw,.8rem);flex-wrap:wrap}
+.flow-step{background:rgba(255,255,255,.05);border:1px solid var(--divider);border-radius:999px;padding:clamp(.4rem,.9vw,.7rem) clamp(.8rem,1.5vw,1.4rem);font-size:var(--body-size);color:var(--text-secondary);white-space:nowrap}
+.flow-step.hot{background:var(--card-accent);color:var(--text-on-accent);border-color:var(--card-accent);font-weight:700}
+.flow-step.dead{background:transparent;color:var(--text-muted);border-style:dashed}
+.flow-arrow{font-family:var(--font-mono);color:var(--card-accent);font-size:clamp(.9rem,1.3vw,1.1rem)}
+.flow-note{font-family:var(--font-mono);font-size:var(--small-size);color:var(--text-muted);padding-left:clamp(4.8rem,9.5vw,9.5rem);letter-spacing:.04em}
+.layer-diagram{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:clamp(1.5rem,3vw,3rem);min-height:0;align-items:center}
+.layer-stack{display:flex;flex-direction:column;gap:clamp(.4rem,.8vw,.7rem)}
+.layer-row{display:flex;align-items:center;gap:clamp(.5rem,1vw,1rem)}
+.layer-block{background:rgba(255,255,255,.04);border:1px solid var(--divider);border-radius:clamp(6px,1vw,10px);padding:clamp(.6rem,1.2vw,1rem) clamp(.8rem,1.5vw,1.2rem);flex:1;min-width:0}
+.layer-block.t{background:var(--card-accent);color:var(--text-on-accent);border-color:var(--card-accent)}
+.layer-block.e{background:rgba(255,87,34,.12);border-color:rgba(255,87,34,.35)}
+.layer-block.b{background:transparent;color:var(--text-secondary)}
+.layer-block .tag{font-family:var(--font-mono);font-size:var(--tiny-size);letter-spacing:.15em;text-transform:uppercase;opacity:.75;display:block;margin-bottom:.2em}
+.layer-block .name{font-family:var(--font-display);font-size:clamp(.85rem,1.25vw,1.05rem);line-height:1.2}
+.layer-indent{padding-left:clamp(1rem,2.5vw,2.5rem)}
+.layer-indent-2{padding-left:clamp(2rem,5vw,5rem)}
+.layer-explain{display:flex;flex-direction:column;gap:clamp(.6rem,1.2vw,1rem)}
+.layer-explain h4{font-family:var(--font-display);color:var(--card-accent);font-size:clamp(.78rem,1.05vw,.95rem);letter-spacing:.18em;text-transform:uppercase;margin:0}
+.layer-explain p{margin:0;color:var(--text-secondary);font-size:var(--body-size);line-height:1.55}
+.layer-explain strong{color:var(--text-primary)}
+.chip-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(.4rem,.9vw,.8rem)}
+.chip{background:rgba(255,255,255,.04);border:1px solid var(--divider);border-radius:clamp(6px,1vw,10px);padding:clamp(.5rem,1vw,.8rem) clamp(.5rem,1vw,.7rem);text-align:center;font-family:var(--font-mono);font-size:var(--tiny-size);color:var(--text-secondary);letter-spacing:.04em}
+.chip.hot{background:rgba(255,87,34,.15);border-color:rgba(255,87,34,.4);color:var(--card-coral)}
+.ai-points{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(.6rem,1.2vw,1.1rem);flex:1;align-items:stretch;min-height:0}
+.ai-point{background:rgba(255,255,255,.03);border:1px solid var(--divider);border-radius:clamp(8px,1.2vw,14px);padding:clamp(.8rem,1.5vw,1.3rem);display:flex;flex-direction:column;gap:clamp(.4rem,.8vw,.7rem);min-height:0}
+.ai-point .n{font-family:var(--font-display);color:var(--card-accent);font-size:clamp(1.4rem,2.5vw,2rem);line-height:1}
+.ai-point h5{font-family:var(--font-display);font-size:clamp(.85rem,1.2vw,1rem);margin:0;color:var(--text-primary);line-height:1.2}
+.ai-point p{margin:0;color:var(--text-secondary);font-size:var(--small-size);line-height:1.45}
+.constraint-list{display:flex;flex-direction:column;gap:clamp(.6rem,1.2vw,1.1rem);flex:1;min-height:0}
+.constraint-item{display:grid;grid-template-columns:1fr 1.2fr;gap:clamp(1rem,2vw,2rem);align-items:center;padding:clamp(.8rem,1.5vw,1.3rem);border-radius:clamp(8px,1.2vw,14px);background:rgba(255,255,255,.03);border:1px solid var(--divider)}
+.constraint-item .label{font-family:var(--font-display);font-size:clamp(.85rem,1.3vw,1.1rem);color:var(--text-primary);display:flex;align-items:center;gap:.6rem}
+.constraint-item .label::before{content:"";width:8px;height:8px;background:var(--card-accent);border-radius:50%}
+.constraint-item .resolve{font-size:var(--body-size);color:var(--text-secondary);line-height:1.5}
+.constraint-item .resolve strong{color:var(--card-accent);font-family:var(--font-display);font-weight:700}
+.qa-list{display:flex;flex-direction:column;gap:clamp(.5rem,1vw,.9rem);flex:1;overflow:hidden}
+.qa-item{display:grid;grid-template-columns:clamp(2.5rem,4vw,3.5rem) 1fr;gap:clamp(.6rem,1.2vw,1.2rem);padding:clamp(.6rem,1.2vw,1rem) 0;border-bottom:1px dashed var(--divider)}
+.qa-item:last-child{border-bottom:none}
+.qa-num{font-family:var(--font-display);color:var(--card-accent);font-size:clamp(.85rem,1.2vw,1.1rem);letter-spacing:.05em}
+.qa-body{font-size:var(--body-size);line-height:1.55}
+.qa-body .qa-q{display:block;margin-bottom:.25em;color:var(--text-primary);font-weight:500}
+.qa-body .qa-a{color:var(--text-secondary)}
+.qa-body .qa-a strong{color:var(--card-accent);font-family:var(--font-display);font-weight:700}
+.philosophy{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:clamp(1.5rem,3vw,3rem);align-items:stretch}
+.phil-1,.phil-2{border-radius:clamp(10px,1.5vw,18px);padding:clamp(1.5rem,3vw,2.5rem);display:flex;flex-direction:column;justify-content:space-between}
+.phil-1{background:rgba(255,255,255,.03);border:1px solid var(--divider)}
+.phil-2{background:var(--card-accent);color:var(--text-on-accent);position:relative;overflow:hidden}
+.phil-2::after{content:"";position:absolute;inset:auto -20% -30% auto;width:60%;height:60%;background:radial-gradient(circle,rgba(255,255,255,.18) 0%,transparent 60%)}
+.phil-eyebrow{font-family:var(--font-display);font-size:var(--small-size);letter-spacing:.25em;text-transform:uppercase;margin-bottom:clamp(1rem,2vw,1.5rem);opacity:.7}
+.phil-1 .phil-eyebrow{color:var(--text-muted)}
+.phil-quote{font-family:var(--font-display);font-size:clamp(1.2rem,2.4vw,2rem);line-height:1.2;margin:0}
+.phil-1 .phil-quote{color:var(--text-secondary)}
+.phil-2 .phil-quote{color:var(--text-on-accent)}
+.phil-foot{font-family:var(--font-mono);font-size:var(--small-size);margin-top:clamp(1.5rem,3vw,2.5rem);letter-spacing:.05em}
+.phil-1 .phil-foot{color:var(--text-muted)}
+.phil-2 .phil-foot{color:var(--text-on-accent);opacity:.75}
+.final-title{font-family:var(--font-display);font-size:clamp(2rem,5.5vw,4.5rem);line-height:1;margin:0;letter-spacing:-.015em}
+.final-title span{color:var(--card-accent)}
+.final-sub{font-size:clamp(.95rem,1.6vw,1.3rem);color:var(--text-secondary);margin:clamp(1rem,2vw,1.8rem) 0 clamp(1.5rem,3vw,2.5rem);max-width:50ch;line-height:1.55}
+.final-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(.8rem,1.5vw,1.4rem);margin-top:clamp(1rem,2vw,1.6rem)}
+.final-card{background:rgba(255,255,255,.04);border:1px solid var(--divider);border-radius:clamp(8px,1.2vw,14px);padding:clamp(1rem,1.8vw,1.5rem)}
+.final-card .k{font-family:var(--font-display);color:var(--card-accent);font-size:clamp(1.2rem,2.2vw,1.8rem);margin-bottom:clamp(.3rem,.6vw,.5rem);line-height:1}
+.final-card .v{color:var(--text-secondary);font-size:var(--small-size);line-height:1.4}
+.progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--card-accent);z-index:1000;transition:width .3s ease;width:0}
+.nav-dots{position:fixed;right:clamp(1rem,2vw,1.6rem);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:clamp(.4rem,.8vw,.7rem);z-index:1000}
+.nav-dot{width:clamp(6px,.8vw,8px);height:clamp(6px,.8vw,8px);border-radius:50%;background:rgba(255,255,255,.15);cursor:pointer;transition:all .3s ease;border:none;padding:0}
+.nav-dot:hover{background:rgba(255,255,255,.4)}
+.nav-dot.active{background:var(--card-accent);transform:scale(1.4)}
+.keyboard-hint{position:fixed;bottom:clamp(.8rem,1.5vw,1.2rem);left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:var(--tiny-size);color:var(--text-muted);z-index:1000;letter-spacing:.1em;text-transform:uppercase;opacity:.6;pointer-events:none}
+@media (max-height:700px){:root{--slide-padding:clamp(.8rem,3vw,2rem)}}
+@media (max-height:600px){:root{--title-size:clamp(1.4rem,4vw,2.4rem);--h2-size:clamp(1.1rem,2.5vw,1.8rem);--body-size:clamp(.72rem,1.1vw,.92rem)}.nav-dots,.keyboard-hint{display:none}}
+@media (max-width:900px){.change-layout,.layer-diagram,.philosophy,.cover-grid{grid-template-columns:1fr}.ai-points{grid-template-columns:repeat(2,1fr)}.chip-grid{grid-template-columns:repeat(3,1fr)}.problem-grid{grid-template-columns:1fr}.constraint-item{grid-template-columns:1fr;gap:.6rem}.final-grid{grid-template-columns:1fr}.cover-card{aspect-ratio:auto;max-height:30vh}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<nav class="nav-dots" id="navDots" aria-label="幻灯片导航"></nav>
+<div class="keyboard-hint">↑↓ / 空格 / 滑动 翻页</div>
+
+<!-- ====== SLIDE 1 · COVER ====== -->
+<section class="slide cover">
+  <div class="chrome-num reveal">01 / 18</div>
+  <div class="chrome-nav reveal"><span class="active">封面</span><span>诊断</span><span>改动</span><span>推导</span><span>落地</span></div>
+  <div class="cover-grid">
+    <div>
+      <div class="cover-eyebrow reveal d1">SSV NEXUS · 1.0 → 2.0 · 改版方案</div>
+      <h1 class="cover-title reveal d2">把"<span>部门博客</span>"<br/>重构为<br/><span>工作上下文库</span>。</h1>
+      <p class="cover-sub reveal d3">一份回答三件事的方案：1.0 错在哪、2.0 改了什么、为什么是最优解——而不是"感觉这样好"。</p>
+      <div class="cover-meta reveal d4"><span>汇报对象：奚丹 / 菊红</span><span>2026.05.20</span><span>SSV Nexus 团队</span></div>
+    </div>
+    <div class="cover-card reveal d3">
+      <div><div class="label">CORE THESIS</div></div>
+      <p class="quote">1.0 不是 UI 不好。<br/>是结构错了。</p>
+      <div class="author">用文章承载了持续演进的工作。</div>
+    </div>
+  </div>
+  <div class="chrome-section reveal d5">PART 00 — 开场</div>
+  <div class="chrome-brand reveal d5">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 2 · TL;DR ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">02 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span class="active">诊断</span><span>改动</span><span>推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">TL;DR · 一页结论</div>
+    <h2 class="slide-title reveal d1">六个维度看清楚：从<em>文档</em>到<em>工作流</em>。</h2>
+    <table class="compare-table reveal d2">
+      <thead><tr><th>维度</th><th>1.0</th><th>2.0</th></tr></thead>
+      <tbody>
+        <tr><td>产品定位</td><td class="old">信息发布工具——"发一篇 Topic"</td><td class="new"><strong>SSV 公共工作区 / AI 喂养层</strong>——积累可演化的工作上下文</td></tr>
+        <tr><td>信息组织</td><td class="old">单页扁平：标题 + 一个 Markdown 正文</td><td class="new"><strong>Topic → Event → Block</strong> 三层结构</td></tr>
+        <tr><td>内容形态</td><td class="old">纯 Markdown 文本 + 附件列表</td><td class="new"><strong>15 种 Block</strong> 多形态原生混排</td></tr>
+        <tr><td>AI 角色</td><td class="old">上传后跑一次"AI 总结"——贴皮的功能点</td><td class="new"><strong>5 处全链路 AI</strong>——生产力底座</td></tr>
+        <tr><td>入库方式</td><td class="old">用户手写正文 + 附件</td><td class="new"><strong>4 类素材入口 + AI 一键解析</strong>——给我素材，我帮你结构化</td></tr>
+        <tr><td>协作消费</td><td class="old">发布即终点：单向阅读 + 评论</td><td class="new"><strong>可演进议题</strong>：追加 Event / 订阅 / 三态反应 / Event 级评论</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="chrome-section reveal">PART 01 — TL;DR</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 3 · 病灶诊断开场 ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">03 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span class="active">诊断</span><span>改动</span><span>推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">DIAGNOSIS · 病灶诊断</div>
+    <h2 class="slide-title reveal d1">不是 UI 不好看，<em>是结构错了。</em></h2>
+    <div class="two-col reveal d2">
+      <div class="col-block">
+        <div class="col-block-title">1.0 的字段顺序</div>
+        <div class="dark-card">
+          <p style="font-family:var(--font-mono);font-size:var(--body-size);color:var(--text-secondary);line-height:1.9;margin:0;">Topic 名称<br/>→ 标签<br/>→ 上传文件<br/>→ 输入正文（Markdown）<br/>→ 可见范围<br/>→ 共同维护者</p>
+          <p style="margin-top:1em;color:var(--card-accent);font-family:var(--font-display);font-size:var(--small-size);letter-spacing:.05em;">→ 典型的"博客 / 公众号"信息模型</p>
+        </div>
+      </div>
+      <div class="col-block">
+        <div class="col-block-title">SSV 真实场景的内容</div>
+        <div class="focus-card">
+          <h4>公益测试提效讨论</h4>
+          <p style="font-family:var(--font-mono);font-size:var(--small-size);line-height:1.8;">├ 5/8&nbsp;&nbsp;最初提出<br/>├ 5/9&nbsp;&nbsp;一周后进展<br/>└ 5/15 两周后复盘</p>
+          <p style="margin-top:.8em;font-family:var(--font-display);font-size:var(--small-size);letter-spacing:.05em;">→ 一个有时间维度、持续演进的议题</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">PART 02 — 诊断</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 4 · 5 大病灶 ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">04 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span class="active">诊断</span><span>改动</span><span>推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">5 大病灶</div>
+    <h2 class="slide-title reveal d1">1.0 的根本错位：<em>不是细节，是骨架。</em></h2>
+    <div class="problem-grid reveal d2">
+      <div class="problem-card"><span class="pn">B01</span><h4>信息结构错配</h4><p>用"一次性的文章"承载"持续演进的工作"。要么不更新（信息流断），要么发新 Topic（议题碎片化）。</p></div>
+      <div class="problem-card"><span class="pn">B02</span><h4>输入路径反人性</h4><p>先写正文 → 再传附件 → AI 总结附件。逼用户把素材"翻译"成 Markdown——这层加工成本就是没人用的核心原因。</p></div>
+      <div class="problem-card"><span class="pn">B03</span><h4>AI 是贴皮，不是骨架</h4><p>只在"上传后总结一次"出现一次，是功能点。对照奚丹要求的"AI 喂养层"，AI 含量远远不够。</p></div>
+      <div class="problem-card"><span class="pn">B04</span><h4>发布即死</h4><p>文章 + 评论的消费模型。议题被锁定在发布那一刻，作者无法追加进展、读者无法订阅、AI 拿不到时间线。</p></div>
+      <div class="problem-card" style="grid-column:span 2;"><span class="pn">B05</span><h4>共识层完全没建：默认透明 / 不可二次转发 / HR 联动——1.0 一项都没有</h4><p>"可见范围"只是个下拉框，全凭自觉。会议结论里的硬约束（默认 90% 透明、白名单不能由发布者自选、白名单内容不能再转发）在 1.0 没有产品层面的兑现。</p></div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">PART 02 — 诊断</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 5 · 终点对比 ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">05 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span class="active">诊断</span><span>改动</span><span>推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">FLOW · 终点完全不同</div>
+    <h2 class="slide-title reveal d1">1.0 的终点是<em>发布</em>。2.0 的终点是<em>AI 喂养层</em>。</h2>
+    <div class="flow-wrap reveal d2">
+      <div class="flow-row">
+        <div class="flow-tag">1.0</div>
+        <div class="flow-chain"><span class="flow-step">用力写一篇文章</span><span class="flow-arrow">→</span><span class="flow-step">发出去</span><span class="flow-arrow">→</span><span class="flow-step dead">死</span></div>
+      </div>
+      <div class="flow-note">↑ AI 总结只是贴皮，议题终点就是发布那一刻</div>
+      <div class="flow-row" style="margin-top:clamp(.5rem,1vw,1rem);">
+        <div class="flow-tag now">2.0</div>
+        <div class="flow-chain"><span class="flow-step">丢素材</span><span class="flow-arrow">→</span><span class="flow-step hot">AI 解析成 Event</span><span class="flow-arrow">→</span><span class="flow-step">轻校对</span><span class="flow-arrow">→</span><span class="flow-step">发布</span><span class="flow-arrow">→</span><span class="flow-step hot">持续追加 + 喂养 AI</span></div>
+      </div>
+      <div class="flow-note">↑ 录入即工作产出 · 议题持续运营 · 数据沉淀为 SSV 上下文库</div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">PART 02 — 诊断</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 6 · 6 大改动总览 ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">06 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span class="active">改动</span><span>推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">PART 03 · 6 大改动</div>
+    <h2 class="slide-title reveal d1">每一条改动，<em>都对应 1.0 的一个具体病灶。</em></h2>
+    <div class="problem-grid reveal d2" style="grid-template-columns:repeat(3,1fr);">
+      <div class="problem-card"><span class="pn">改动 01</span><h4>三层结构</h4><p>Topic → Event → Block，对应 B01 信息结构错配</p></div>
+      <div class="problem-card"><span class="pn">改动 02</span><h4>多形态 Block 编辑器</h4><p>15 种原生 Block，对应 B02 输入路径反人性</p></div>
+      <div class="problem-card"><span class="pn">改动 03</span><h4>素材入口 + AI 解析</h4><p>4 类入口一键解析，对应 B02 输入革命</p></div>
+      <div class="problem-card"><span class="pn">改动 04</span><h4>全链路 AI（5 处）</h4><p>从功能点到骨架，对应 B03 AI 含量不够</p></div>
+      <div class="problem-card"><span class="pn">改动 05</span><h4>发布后即活议题</h4><p>追加 / 订阅 / 三态反应，对应 B04 发布即死</p></div>
+      <div class="problem-card"><span class="pn">改动 06</span><h4>共识层产品化</h4><p>默认透明 / 白名单审批 / 不可转发，对应 B05</p></div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">PART 03 — 改动</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 7 · 改动1 三层结构 ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">07 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span class="active">改动</span><span>推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">改动 01 · 解决 B01</div>
+    <h2 class="slide-title reveal d1">把"一篇 Topic"重构为 <em>Topic → Event → Block</em>。</h2>
+    <div class="layer-diagram reveal d2">
+      <div class="layer-stack">
+        <div class="layer-row"><div class="layer-block t"><span class="tag">TOPIC</span><span class="name">公益测试提效讨论</span></div></div>
+        <div class="layer-row layer-indent"><div class="layer-block e"><span class="tag">EVENT #1 · 2026-05-08</span><span class="name">公益 AI 自动化测试提效讨论</span></div></div>
+        <div class="layer-row layer-indent-2"><div class="layer-block b"><span class="tag">BLOCK</span><span class="name" style="font-family:var(--font-mono);font-size:var(--small-size);">text · pptPreview · file</span></div></div>
+        <div class="layer-row layer-indent"><div class="layer-block e"><span class="tag">EVENT #2 · 2026-05-09</span><span class="name">测试工作流现状与改进计划</span></div></div>
+        <div class="layer-row layer-indent"><div class="layer-block e"><span class="tag">EVENT #3 · 2026-05-15</span><span class="name">测试工作流本周进展与重大突破</span></div></div>
+      </div>
+      <div class="layer-explain">
+        <h4>为什么是这三层</h4>
+        <p>真实的"工作议题"天然就是三层：<strong>Topic</strong> 是议题本身，<strong>Event</strong> 是这件事的每一次演进，<strong>Block</strong> 是 Event 内的内容粒度。</p>
+        <h4>为什么不能少一层</h4>
+        <p>少了 Event，<strong>时间线就丢了</strong>——AI 无法回答"这件事最近怎么样"。Notion 的纯文档模型不解决"演进"问题。</p>
+        <h4>为什么不能用平铺评论代替</h4>
+        <p>评论是平的、无结构、无法承载 PPT/会议/文件。等于退回 1.0 的"附件式正文"。</p>
+      </div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">PART 03 — 改动</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 8 · 改动2 多形态 Block ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">08 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span class="active">改动</span><span>推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">改动 02 · 解决 B02</div>
+    <h2 class="slide-title reveal d1">从一个 Markdown 框，到 <em>15 种原生 Block</em>。</h2>
+    <div class="change-layout reveal d2">
+      <div class="change-focus">
+        <div><div class="pn"><small>BLOCK SYSTEM</small>15</div></div>
+        <div>
+          <h3>Block 化不是为了编辑体验。<br/>是<u>为 AI 而做的</u>。</h3>
+          <p style="font-size:var(--small-size);line-height:1.5;margin:0;opacity:.85;">富文本是渲染层，没有"块"概念；AI 没法按粒度做摘要 / 检索 / 喂养。Block 化是必要前提。</p>
+        </div>
+      </div>
+      <div class="change-body">
+        <h5>15 种 Block 类型</h5>
+        <div class="chip-grid">
+          <div class="chip">text</div><div class="chip">h1 / h2 / h3</div><div class="chip">quote</div><div class="chip">bulletList</div><div class="chip">numberList</div>
+          <div class="chip">divider</div><div class="chip">image</div><div class="chip">file</div><div class="chip">link</div><div class="chip">todo</div>
+          <div class="chip">table</div><div class="chip">code</div><div class="chip hot">pptPreview</div><div class="chip hot">htmlPreview</div><div class="chip">+扩展</div>
+        </div>
+        <h5 style="margin-top:clamp(.6rem,1.2vw,1rem);">关键设计</h5>
+        <ul>
+          <li><strong>pptPreview / htmlPreview</strong> 是原生预览，不是附件挂件——决定"用户愿不愿意把素材放进来"</li>
+          <li>所有 Block 在 <span style="font-family:var(--font-mono);color:var(--card-accent);">factory.ts</span> 集中工厂化，新增 Block &lt; 100 行代码</li>
+          <li>每个 Block 独立可寻址，AI 可按 Block 粒度做摘要 / 引用 / 检索</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">PART 03 — 改动</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 9 · 改动3 素材入口 ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">09 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span class="active">改动</span><span>推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">改动 03 · 输入革命</div>
+    <h2 class="slide-title reveal d1">把"手写正文"重构为<em>右侧素材入口 + AI 一键解析</em>。</h2>
+    <div class="change-layout reveal d2">
+      <div class="change-focus">
+        <div><div class="pn"><small>IMPORT PIPELINE</small>4 IN<br/>1 OUT</div></div>
+        <div>
+          <h3>录入即工作产出。<br/>这一条直接对应奚丹的明确判断。</h3>
+          <span class="tag">奚丹原话兑现</span>
+        </div>
+      </div>
+      <div class="change-body">
+        <h5>4 类素材入口</h5>
+        <ul>
+          <li><strong>🌐 链接</strong> —— 粘贴 URL，抽取标题 / 封面 / 正文</li>
+          <li><strong>📁 文件</strong> —— PDF / Word / PPT / Excel / 图片 / 音频</li>
+          <li><strong>📹 会议</strong> —— 腾讯会议 / 文档录屏转写</li>
+          <li><strong>📋 粘贴</strong> —— 聊天记录 / 邮件 / 任意文本</li>
+        </ul>
+        <h5 style="margin-top:clamp(.6rem,1.2vw,1rem);">AI 一键解析</h5>
+        <ul>
+          <li>所有素材自动生成 Event 草稿，PPT → pptPreview Block，链接 → htmlPreview Block</li>
+          <li>固定右侧面板而非弹窗——<strong>素材是全程伴随的，不是一次性动作</strong></li>
+          <li>AI 产物永远是<strong>草稿态</strong>，作者可改可删——AI 在这里是打字机不是裁判</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">PART 03 — 改动</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 10 · 改动4 全链路 AI ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">10 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span class="active">改动</span><span>推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">改动 04 · 解决 B03</div>
+    <h2 class="slide-title reveal d1">AI 从<em>功能点</em>升级为<em>骨架</em>。</h2>
+    <div class="ai-points reveal d2">
+      <div class="ai-point"><div class="n">01</div><h5>标题 AI 优化</h5><p>"测试讨论" → "公益 AI 自动化测试提效讨论"，提升标题信息密度</p></div>
+      <div class="ai-point"><div class="n">02</div><h5>素材一键解析</h5><p>4 类素材自动拆分成 Event + 对应 Block，作者只做轻校对</p></div>
+      <div class="ai-point"><div class="n">03</div><h5>AI 速览</h5><p>头部卡片自动出 Topic 全局摘要，给读者一句话抓重点</p></div>
+      <div class="ai-point"><div class="n">04</div><h5>Event 摘要</h5><p>每个 Event 独立 AI 摘要，右侧概览按时间线展示</p></div>
+      <div class="ai-point"><div class="n">05</div><h5>AI Insight</h5><p>跨 Event 提炼洞察、待办、关键人物——智能助手</p></div>
+    </div>
+    <p class="reveal d3" style="text-align:center;margin-top:clamp(1rem,2vw,1.6rem);color:var(--text-secondary);font-size:var(--body-size);">5 处 AI 各管各的事 · 无重叠 · 都是用户主动触发或只读消费 · 不可用时<strong style="color:var(--card-accent);">不影响主流程</strong></p>
+  </div>
+  <div class="chrome-section reveal">PART 03 — 改动</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 11 · 改动5 发布后活议题 ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">11 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span class="active">改动</span><span>推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">改动 05 · 解决 B04</div>
+    <h2 class="slide-title reveal d1">发布从<em>终点</em>变成<em>起点</em>。</h2>
+    <table class="compare-table reveal d2">
+      <thead><tr><th>消费维度</th><th>1.0 发布后</th><th>2.0 发布后</th></tr></thead>
+      <tbody>
+        <tr><td>布局</td><td class="old">单篇正文 + 评论</td><td class="new"><strong>左：Event 时间线</strong> / <strong>中：Event 详情</strong> / <strong>右：AI 概览</strong></td></tr>
+        <tr><td>评论粒度</td><td class="old">挂在文章底部</td><td class="new">挂在<strong>每个 Event</strong>下，讨论细粒度对齐到具体进展</td></tr>
+        <tr><td>反应类型</td><td class="old">单一点赞</td><td class="new"><strong>赞同 / 反对 / 疑惑</strong>——SSV 文化里"鼓励异见"的产品化</td></tr>
+        <tr><td>作者关系</td><td class="old">单一作者</td><td class="new"><strong>共同维护者</strong>（可追加 Event）+ <strong>订阅者</strong>（收到推送）</td></tr>
+        <tr><td>更新机制</td><td class="old">想看新进展要等作者重发</td><td class="new"><strong>原 Topic 内追加 Event</strong>，订阅者收到通知</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="chrome-section reveal">PART 03 — 改动</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 12 · 改动6 共识层 ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">12 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span class="active">改动</span><span>推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">改动 06 · 解决 B05</div>
+    <h2 class="slide-title reveal d1">把奚丹的硬要求，<em>落到产品按钮层。</em></h2>
+    <div class="constraint-list reveal d2">
+      <div class="constraint-item"><div class="label">默认 90% 透明</div><div class="resolve">默认全员可见。<strong>收窄</strong>范围需走审批 + 标密比例预警——让"标密"成为有成本的动作。</div></div>
+      <div class="constraint-item"><div class="label">白名单不能由发布者自选</div><div class="resolve">收窄范围时<strong>自动进入审批流</strong>，审批人不是发布者本人。</div></div>
+      <div class="constraint-item"><div class="label">白名单内容不能再转发</div><div class="resolve"><strong>产品级权限</strong>：白名单 Topic 隐藏"复制链接 / 导出 / 转发"按钮 + 水印 + 审计日志，三层叠加。</div></div>
+      <div class="constraint-item"><div class="label">录入 = 工作产出</div><div class="resolve">头部展示"X 字 / X 个 Event" 录入指标；<strong>与 HR 评优数据打通</strong>（接口待定，本周对齐）。</div></div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">PART 03 — 改动</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 13 · 反问到死（推导） ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">13 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span>改动</span><span class="active">推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">REASONING · 反问到死</div>
+    <h2 class="slide-title reveal d1">为什么是这套，<em>不是别的？</em></h2>
+    <div class="qa-list reveal d2">
+      <div class="qa-item">
+        <div class="qa-num">Q1</div>
+        <div class="qa-body">
+          <span class="qa-q">能不能不大改，只在 1.0 上加 AI 增强？</span>
+          <span class="qa-a"><strong>不行。</strong>1.0 的根本问题是信息结构错配——在错的结构上加 AI，等于把烂泥糊得更厚。AI 拿不到时间维度、拿不到 Block 粒度，再强的模型也救不回来。结构问题必须先解决。</span>
+        </div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-num">Q2</div>
+        <div class="qa-body">
+          <span class="qa-q">能不能用 Notion / 飞书文档替代自研？</span>
+          <span class="qa-a"><strong>三道硬墙：</strong>① 数据归属——AI 喂养层要求数据沉淀在 SSV / 腾讯内部；② 场景定制——Topic→Event→Block 是为"工作议题"定制的语义；③ 共识约束——默认透明、不可转发、HR 联动这些 SSV 特有要求，第三方做不到。</span>
+        </div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-num">Q3</div>
+        <div class="qa-body">
+          <span class="qa-q">能不能只升级编辑器，发布后保持 1.0？</span>
+          <span class="qa-a"><strong>不行。</strong>如果发布后还是文章模式，作者就没有"追加 Event"的入口，Event 结构在用户感知上就是死的。<strong>编辑态和消费态必须同构</strong>——这是产品一致性的基本要求。</span>
+        </div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-num">Q4</div>
+        <div class="qa-body">
+          <span class="qa-q">6 月试运行最大风险是什么？</span>
+          <span class="qa-a"><strong>不是工程量，是认知迁移。</strong>1.0 用户心智是"写一篇 Topic"，2.0 要求心智变成"积累一个议题"。需要高层示范（OKR 自上而下入库）+ 真实案例引导 + "录入=产出"的 HR 回报配套。</span>
+        </div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-num">Q5</div>
+        <div class="qa-body">
+          <span class="qa-q">会不会"既要又要"——既要轻量录入又要结构化？</span>
+          <span class="qa-a"><strong>不冲突。</strong>结构化是 AI 帮你做的，不是要求作者做的。作者只丢素材，结构化由系统自动生成 Event 草稿。这正是 2.0 的核心设计哲学：<strong>让结构化对用户透明。</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">PART 04 — 推导</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 14 · 哲学对照 ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">14 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span>改动</span><span class="active">推导</span><span>落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">PHILOSOPHY · 一图说尽</div>
+    <h2 class="slide-title reveal d1">两条路径，<em>两个完全不同的终点。</em></h2>
+    <div class="philosophy reveal d2">
+      <div class="phil-1">
+        <div>
+          <div class="phil-eyebrow">1.0 的路径</div>
+          <p class="phil-quote">用户用力写一篇文章<br/>→ 发出去<br/>→ 死</p>
+        </div>
+        <div class="phil-foot">终点 = 发布那一刻 · AI 是贴皮</div>
+      </div>
+      <div class="phil-2">
+        <div>
+          <div class="phil-eyebrow">2.0 的路径</div>
+          <p class="phil-quote">用户丢素材<br/>→ AI 解析成 Event<br/>→ 轻校对发布<br/>→ <u>持续追加</u> + 消费 + 喂养</p>
+        </div>
+        <div class="phil-foot">终点 = AI 喂养层 · 议题持续运营</div>
+      </div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">PART 04 — 推导</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 15 · 汇报叙事顺序 ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">15 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span>改动</span><span>推导</span><span class="active">落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">NARRATIVE · 汇报叙事顺序</div>
+    <h2 class="slide-title reveal d1">向上汇报时，<em>按这个顺序讲。</em></h2>
+    <div class="problem-grid reveal d2" style="grid-template-columns:repeat(4,1fr);">
+      <div class="problem-card"><span class="pn">STEP 01</span><h4>从问题出发</h4><p>30 秒一句话定调：1.0 不是 UI 不好，是结构错了</p></div>
+      <div class="problem-card"><span class="pn">STEP 02</span><h4>三层结构</h4><p>用"公益测试提效讨论"截图举例最直观</p></div>
+      <div class="problem-card"><span class="pn">STEP 03</span><h4>录入革命</h4><p>4 入口 + AI 解析 → "录入即产出"的产品兑现</p></div>
+      <div class="problem-card"><span class="pn">STEP 04</span><h4>全链路 AI</h4><p>5 处 AI 都是为消费效率服务，不是为了"显得 AI"</p></div>
+      <div class="problem-card"><span class="pn">STEP 05</span><h4>活议题</h4><p>追加 + 订阅 + 三态反应 + Event 级评论</p></div>
+      <div class="problem-card"><span class="pn">STEP 06</span><h4>共识层产品化</h4><p>奚丹的硬要求落到代码层，不是规范文档</p></div>
+      <div class="problem-card"><span class="pn">STEP 07</span><h4>反问收尾</h4><p>5 个"反问到死"问题，证明推导扛得住质问</p></div>
+      <div class="problem-card"><span class="pn">STEP 08</span><h4>里程碑 + 待定</h4><p>6 月试运行 + HR 接口 + 管理者 OKR 名单</p></div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">PART 05 — 落地</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 16 · 尖锐 Q&A 预案 ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">16 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span>改动</span><span>推导</span><span class="active">落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">DEFENSE · 尖锐问题预案</div>
+    <h2 class="slide-title reveal d1">会被问到的 6 个尖锐问题。<em>提前备好答案。</em></h2>
+    <table class="compare-table reveal d2">
+      <thead><tr><th style="width:42%;">尖锐 Q</th><th style="width:58%;">关键 A</th></tr></thead>
+      <tbody>
+        <tr><td class="old" style="color:var(--text-primary);font-family:var(--font-display);">这套和飞书 / Notion 的区别？</td><td class="new">不是文档工具，是<strong>SSV 工作上下文库 + AI 喂养层</strong>；数据归属、场景定制、共识约束三道硬墙</td></tr>
+        <tr><td class="old" style="color:var(--text-primary);font-family:var(--font-display);">多 Event 会不会让 Topic 越来越长？</td><td class="new">AI 速览（Topic 级）+ Event 摘要（Event 级）+ 时间线导航，<strong>分层消费</strong></td></tr>
+        <tr><td class="old" style="color:var(--text-primary);font-family:var(--font-display);">AI 解析错了责任谁担？</td><td class="new">AI 产物永远是<strong>草稿态</strong>；作者审核后才入库；AI 是助手不是裁判</td></tr>
+        <tr><td class="old" style="color:var(--text-primary);font-family:var(--font-display);">1.0 用户怎么迁移？</td><td class="new">数据迁移：1.0 一篇 Topic = 2.0 一个 Topic + 一个 Event；<strong>老数据零损失</strong></td></tr>
+        <tr><td class="old" style="color:var(--text-primary);font-family:var(--font-display);">6 月试运行范围多大？</td><td class="new">建议<strong>SSV 三个核心团队</strong>（产品 / 技术 / 运营各一），不全员铺开，按周复盘后扩</td></tr>
+        <tr><td class="old" style="color:var(--text-primary);font-family:var(--font-display);">透明默认会不会出事故？</td><td class="new">透明范围限 SSV 内部；标密走审批；<strong>高敏内容根本不应放 Nexus</strong>（用现有保密系统）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="chrome-section reveal">PART 05 — 落地</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 17 · 里程碑 + 待办 ====== -->
+<section class="slide">
+  <div class="chrome-num reveal">17 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span>改动</span><span>推导</span><span class="active">落地</span></div>
+  <div class="slide-content">
+    <div class="eyebrow reveal">MILESTONE · 节奏与待定项</div>
+    <h2 class="slide-title reveal d1">6 月试运行，<em>这些必须本周对齐。</em></h2>
+    <div class="problem-grid reveal d2">
+      <div class="problem-card" style="border-color:rgba(255,87,34,.4);background:rgba(255,87,34,.06);">
+        <span class="pn">🔴 紧急</span>
+        <h4>HR 接口人本周敲定</h4>
+        <p>"AI 评优基于 Nexus" 是大老板亲口承诺，但兑现方是 HR。建议从<strong>正向激励切入</strong>，不要从末位淘汰。</p>
+      </div>
+      <div class="problem-card" style="border-color:rgba(255,87,34,.4);background:rgba(255,87,34,.06);">
+        <span class="pn">🔴 紧急</span>
+        <h4>团队内部产品复审</h4>
+        <p>把"管理驾驶舱 / 大屏 / 门户首页"类工作砍掉或降级，挪人到入库 + 结构化对象。</p>
+      </div>
+      <div class="problem-card" style="border-color:rgba(255,87,34,.4);background:rgba(255,87,34,.06);">
+        <span class="pn">🔴 紧急</span>
+        <h4>OKR 一等公民数据模型</h4>
+        <p>OKR 作为产品对象的数据模型草稿本周出，这是 6 月试运行前最重的工程。</p>
+      </div>
+      <div class="problem-card">
+        <span class="pn">🟡 重要</span>
+        <h4>两份具名清单</h4>
+        <p>请奚丹 / 菊红签字：① 管理者 OKR 入库时间表 ② 6 月可取消的对齐会清单。</p>
+      </div>
+      <div class="problem-card">
+        <span class="pn">🟢 工程</span>
+        <h4>6 周交付节奏</h4>
+        <p>三层数据模型 + 编辑器 + 4 类素材解析 + 5 处 AI 接入 + 发布态重构，与 6 月试运行节奏匹配。</p>
+      </div>
+      <div class="problem-card">
+        <span class="pn">🟢 防漏</span>
+        <h4>容易漏的 3 件事</h4>
+        <p>白名单"不能再转"的权限模型 / 白名单不能自选要走审批 / 按周复盘要<strong>指定专人</strong>不能写"全体"。</p>
+      </div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">PART 05 — 落地</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<!-- ====== SLIDE 18 · 收尾 ====== -->
+<section class="slide cover">
+  <div class="chrome-num reveal">18 / 18</div>
+  <div class="chrome-nav reveal"><span>封面</span><span>诊断</span><span>改动</span><span>推导</span><span class="active">落地</span></div>
+  <div class="slide-content" style="justify-content:center;">
+    <div class="cover-eyebrow reveal d1">FINAL · 一句话收尾</div>
+    <h1 class="final-title reveal d2">没有一处是<br/>"<span>我觉得这样好</span>"。</h1>
+    <p class="final-sub reveal d3">每一条改动都从 1.0 的具体问题反推出来，并且都问过自己"有没有更省的方案 / 会不会过度设计 / 能否被替代"——结论可以辩论，但推导扛得住质问。</p>
+
+    <div class="final-grid reveal d4">
+      <div class="final-card"><div class="k">B01 → 改动 01</div><div class="v">信息结构错配 → 三层结构</div></div>
+      <div class="final-card"><div class="k">B02 → 改动 02 + 03</div><div class="v">输入路径反人性 → Block + AI 解析</div></div>
+      <div class="final-card"><div class="k">B03 → 改动 04</div><div class="v">AI 贴皮 → 全链路 AI 骨架</div></div>
+      <div class="final-card"><div class="k">B04 → 改动 05</div><div class="v">发布即死 → 可演进议题</div></div>
+      <div class="final-card"><div class="k">B05 → 改动 06</div><div class="v">共识层空白 → 产品级硬约束</div></div>
+      <div class="final-card" style="background:var(--card-accent);border-color:var(--card-accent);"><div class="k" style="color:var(--text-on-accent);">→ 目标</div><div class="v" style="color:var(--text-on-accent);opacity:.85;">SSV 公共工作区 / AI 喂养层</div></div>
+    </div>
+  </div>
+  <div class="chrome-section reveal">END · 谢谢</div>
+  <div class="chrome-brand reveal">SSV NEXUS</div>
+</section>
+
+<script>
+/* === Slide Presentation Controller === */
+class SlidePresentation {
+  constructor() {
+    this.slides = Array.from(document.querySelectorAll('.slide'));
+    this.current = 0;
+    this.progressBar = document.getElementById('progressBar');
+    this.navDots = document.getElementById('navDots');
+    this.setupNavDots();
+    this.setupKeyboard();
+    this.setupWheel();
+    this.setupTouch();
+    this.setupObserver();
+    this.updateProgress();
+  }
+
+  setupNavDots() {
+    this.navDots.innerHTML = ''; // CRITICAL: clear first to avoid duplicates
+    this.slides.forEach((s, i) => {
+      const dot = document.createElement('button');
+      dot.className = 'nav-dot';
+      dot.setAttribute('aria-label', `第 ${i+1} 张`);
+      dot.addEventListener('click', () => this.goto(i));
+      this.navDots.appendChild(dot);
+    });
+    this.updateDots();
+  }
+
+  updateDots() {
+    Array.from(this.navDots.children).forEach((d, i) => {
+      d.classList.toggle('active', i === this.current);
+    });
+  }
+
+  updateProgress() {
+    const pct = ((this.current + 1) / this.slides.length) * 100;
+    this.progressBar.style.width = pct + '%';
+  }
+
+  goto(i) {
+    if (i < 0 || i >= this.slides.length) return;
+    this.current = i;
+    this.slides[i].scrollIntoView({ behavior: 'smooth' });
+    this.updateDots();
+    this.updateProgress();
+  }
+
+  next() { this.goto(Math.min(this.current + 1, this.slides.length - 1)); }
+  prev() { this.goto(Math.max(this.current - 1, 0)); }
+
+  setupKeyboard() {
+    document.addEventListener('keydown', (e) => {
+      if (['ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); this.next(); }
+      else if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); this.prev(); }
+      else if (e.key === 'Home') { e.preventDefault(); this.goto(0); }
+      else if (e.key === 'End') { e.preventDefault(); this.goto(this.slides.length - 1); }
+    });
+  }
+
+  setupWheel() {
+    let lock = false;
+    window.addEventListener('wheel', (e) => {
+      if (lock) return;
+      if (Math.abs(e.deltaY) < 30) return;
+      lock = true;
+      if (e.deltaY > 0) this.next(); else this.prev();
+      setTimeout(() => { lock = false; }, 700);
+    }, { passive: true });
+  }
+
+  setupTouch() {
+    let startY = 0;
+    window.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, { passive: true });
+    window.addEventListener('touchend', (e) => {
+      const dy = startY - e.changedTouches[0].clientY;
+      if (Math.abs(dy) < 40) return;
+      if (dy > 0) this.next(); else this.prev();
+    }, { passive: true });
+  }
+
+  setupObserver() {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+          entry.target.classList.add('visible');
+          const idx = this.slides.indexOf(entry.target);
+          if (idx >= 0 && idx !== this.current) {
+            this.current = idx;
+            this.updateDots();
+            this.updateProgress();
+          }
+        }
+      });
+    }, { threshold: [0.3, 0.5, 0.7] });
+    this.slides.forEach((s) => io.observe(s));
+    // Activate first slide immediately
+    requestAnimationFrame(() => this.slides[0]?.classList.add('visible'));
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => new SlidePresentation());
+</script>
+
+</body>
+</html>
