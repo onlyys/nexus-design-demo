@@ -1,4 +1,4 @@
-import { uid } from "@/lib/utils";
+import { genAvatar, uid } from "@/lib/utils";
 import { buildEventBlocks } from "@/components/editor/factory";
 import { MOCK_USERS } from "@/lib/mock";
 import type { PublishedTopic, PublishedEvent } from "./types";
@@ -68,7 +68,7 @@ export const MOCK_TOPIC: PublishedTopic = {
               authorId: "u1",
               authorName: "roizhao",
               authorTitle: "赵仁簃",
-              authorAvatar: "https://i.pravatar.cc/80?img=12",
+              authorAvatar: genAvatar("赵仁簃"),
               content:
                 "明白，这里大概有两方面的考虑：\n一是产品逻辑，它需要自然的嵌入到会议和讨论流程中（所以是机器人）\n二是要达到的效果，这块应该是需要深入讨论的，比如\n1、把 Connected Papers 等生产关系汇集到，是不是我们按照参会者背景结合被引数量等指标过滤掉得到 source paper，生成局部地图就行\n2、针对拆给例子会试用",
               time: "2026-05-12 19:42",
@@ -78,7 +78,7 @@ export const MOCK_TOPIC: PublishedTopic = {
               authorId: "u3",
               authorName: "马巍",
               authorTitle: "前端工程师",
-              authorAvatar: "https://i.pravatar.cc/80?img=15",
+              authorAvatar: genAvatar("马巍"),
               content:
                 "我们后续可以把 OpenAPI 优先对接到「为村开放联盟」的伙伴，这样能更快验证场景。",
               time: "2026-05-12 21:05",
@@ -91,7 +91,7 @@ export const MOCK_TOPIC: PublishedTopic = {
               authorId: "u4",
               authorName: "刘洋",
               authorTitle: "设计师",
-              authorAvatar: "https://i.pravatar.cc/80?img=33",
+              authorAvatar: genAvatar("刘洋"),
               content:
                 "县域文旅小程序模板的数据值得做一次专题复盘，3 天就能交付太亮眼了。",
               time: "2026-05-14 17:32",

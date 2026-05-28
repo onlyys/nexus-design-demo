@@ -1,9 +1,11 @@
+import { genAvatar } from "./utils";
+
 export const MOCK_USERS = [
   {
     id: "u1",
     name: "王志恒",
     title: "产品经理",
-    avatar: "https://i.pravatar.cc/80?img=12",
+    avatar: genAvatar("王志恒"),
     /** 默认所属（主岗）部门 id —— 与 USER_DEPARTMENTS 对齐 */
     deptId: "ssv-tech",
   },
@@ -11,41 +13,40 @@ export const MOCK_USERS = [
     id: "u2",
     name: "马巍",
     title: "前端工程师",
-    avatar: "https://i.pravatar.cc/80?img=15",
+    avatar: genAvatar("马巍"),
     deptId: "ssv-tech",
   },
   {
     id: "u3",
     name: "王芳",
     title: "AI 研究员",
-    avatar: "https://i.pravatar.cc/80?img=47",
+    avatar: genAvatar("王芳"),
     deptId: "ssv-research",
   },
   {
     id: "u4",
     name: "刘洋",
     title: "设计师",
-    avatar: "https://i.pravatar.cc/80?img=33",
+    avatar: genAvatar("刘洋"),
     deptId: "ssv-design",
   },
   {
     id: "u5",
     name: "陈敏",
     title: "数据分析",
-    avatar: "https://i.pravatar.cc/80?img=49",
+    avatar: genAvatar("陈敏"),
     deptId: "ssv-research",
   },
   {
     id: "u6",
     name: "周宇",
     title: "技术专家",
-    avatar: "https://i.pravatar.cc/80?img=68",
+    avatar: genAvatar("周宇"),
     deptId: "ssv-tech",
   },
 ];
 
 export const RECOMMENDED_TAGS = [
-  "关联关键策略",
   "月会",
   "战略",
   "合规",
@@ -56,7 +57,7 @@ export const RECOMMENDED_TAGS = [
   "其他",
 ];
 
-/** 触发"关联关键策略选择面板"的标签名（与 RECOMMENDED_TAGS[0] 保持一致） */
+/** 关联关键策略标签名（已从推荐标签移至 Topic 类型选择器控制） */
 export const KEY_STRATEGY_TAG = "关联关键策略";
 
 /** 标签自带的 emoji 图标（保留为空对象 —— 当前设计不使用 emoji） */

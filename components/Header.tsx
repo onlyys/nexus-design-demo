@@ -2,6 +2,7 @@
 
 import { NexusLogo } from "@/components/Logo";
 import { Bell } from "lucide-react";
+import { genAvatar } from "@/lib/utils";
 
 interface HeaderProps {
   /** 当前用户名 */
@@ -20,7 +21,7 @@ interface HeaderProps {
  */
 export function Header({
   userName = "王志恒",
-  userAvatar = "https://i.pravatar.cc/80?img=12",
+  userAvatar = genAvatar("王志恒"),
   extra,
 }: HeaderProps) {
   return (

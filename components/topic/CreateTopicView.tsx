@@ -10,12 +10,16 @@ import { AuthorsField } from "@/components/topic/AuthorsField";
 import { AuthorRoleField } from "@/components/topic/AuthorRoleField";
 import { TopicTagsField } from "@/components/topic/TopicTagsField";
 import {
+  TopicTypeField,
+  type TopicType,
+} from "@/components/topic/TopicTypeField";
+import {
   TopicVisibilityField,
   type VisibilityValue,
 } from "@/components/topic/TopicVisibilityField";
 import { KeyStrategyLinkField } from "@/components/topic/KeyStrategyLinkField";
 import { KEY_STRATEGY_TAG, MOCK_USERS, USER_DEPARTMENTS } from "@/lib/mock";
-import { nowHHMM, uid } from "@/lib/utils";
+import { genAvatar, nowHHMM, uid } from "@/lib/utils";
 import { createBlock } from "@/components/editor/factory";
 import { EventCard } from "@/components/event/EventCard";
 import type { EventItem } from "@/components/event/types";
@@ -59,7 +63,7 @@ export function CreateTopicView({
   initialAuthorIds,
   initialAuthorRoleDeptId,
   userName = "王志恒",
-  userAvatar = "https://i.pravatar.cc/80?img=12",
+  userAvatar = genAvatar("王志恒"),
   headerExtra,
   editMode = "create",
   publishedTopicId,
@@ -105,6 +109,7 @@ export function CreateTopicView({
   );
 
   const [tagsList, setTagsList] = React.useState<string[]>([]);
+  const [topicType, setTopicType] = React.useState<TopicType>("normal");
   const [visibility, setVisibility] = React.useState<VisibilityValue>(
     () =>
       initialVisibility ?? {
@@ -117,7 +122,7 @@ export function CreateTopicView({
     departmentId: string;
     strategyId?: string;
   }>({ departmentId: authorRoleDeptId });
-  const showKeyStrategyPanel = tagsList.includes(KEY_STRATEGY_TAG);
+  const showKeyStrategyPanel = topicType === "department";
 
   // 当用户切换"以此岗位发布"时，同步策略锁定的 departmentId 与可见范围 deptId
   React.useEffect(() => {
@@ -542,7 +547,7 @@ export function CreateTopicView({
                 </div>
 
                 <div className="mt-5 space-y-4">
-                  <TopicTagsField value={tagsList} onChange={setTagsList} />
+                  <TopicTypeField value={topicType} onChange={setTopicType} />
                   {showKeyStrategyPanel && (
                     <KeyStrategyLinkField
                       departmentId={authorRoleDeptId}
@@ -550,6 +555,7 @@ export function CreateTopicView({
                       onChange={setKeyStrategy}
                     />
                   )}
+                  <TopicTagsField value={tagsList} onChange={setTagsList} />
                   <TopicVisibilityField
                     value={visibility}
                     onChange={setVisibility}

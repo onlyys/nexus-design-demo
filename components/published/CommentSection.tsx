@@ -11,7 +11,7 @@ import {
   Image as ImageIcon,
   ChevronDown,
 } from "lucide-react";
-import { cn, uid } from "@/lib/utils";
+import { cn, genAvatar, uid } from "@/lib/utils";
 import type { CommentItem } from "./types";
 
 interface CommentSectionProps {
@@ -35,7 +35,7 @@ const DEFAULT_SCOPES = [
 export function CommentSection({
   initialComments,
   currentUserName = "王志恒",
-  currentUserAvatar = "https://i.pravatar.cc/80?img=12",
+  currentUserAvatar = genAvatar("王志恒"),
 }: CommentSectionProps) {
   const [comments, setComments] = React.useState<CommentItem[]>(initialComments);
   const [draft, setDraft] = React.useState("");

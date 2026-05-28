@@ -44,6 +44,9 @@ import {
   Sparkles,
   Loader2,
   CheckCircle2,
+  Upload,
+  FileCode,
+  GlobeIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BlockType } from "./types";
@@ -91,16 +94,12 @@ type InsertItem = {
   meta?: { mode?: "plain" | "card" | "full"; fileType?: "pdf" };
 };
 
-const G_INSERT_GROUPS: { title: string; items: InsertItem[] }[] = [
-  {
-    title: "排版",
-    items: [
-      { type: "divider", label: "分割线", desc: "视觉分隔线", Icon: Minus },
-      { type: "quote", label: "引用块", desc: "突出引述内容", Icon: Quote },
-      { type: "quote", label: "提示框", desc: "信息 / 提醒 / 警示", Icon: Info },
-      { type: "quote", label: "折叠块", desc: "可展开的内容容器", Icon: ChevronsUpDown },
-    ],
-  },
+const G_INSERT_ITEMS: InsertItem[] = [
+  { type: "code", label: "代码块", desc: "插入代码片段，支持语法高亮", Icon: Code },
+  { type: "divider", label: "分割线", desc: "视觉分隔线", Icon: Minus },
+  { type: "quote", label: "引用块", desc: "突出引述内容", Icon: Quote },
+  { type: "quote", label: "提示框", desc: "信息 / 提醒 / 警示", Icon: Info },
+  { type: "quote", label: "折叠块", desc: "可展开的内容容器", Icon: ChevronsUpDown },
 ];
 
 /* ============ 组件 ============ */
@@ -392,8 +391,32 @@ export function EditorToolbar({
 
       {/* ============ F 元素块区 ============ */}
       <Group>
-        {/* 附件下拉 */}
-        <Tooltip label="附件" hint="上传文件 / Word / Excel / PDF / PPT">
+        {/* ===== 附件上传分区 ===== */}
+
+        {/* ① HTML 上传 — 蓝色突出 */}
+        <Tooltip label="上传 HTML" hint="上传本地 HTML 文件并在页面中预览">
+          <button
+            onClick={() => onInsert("htmlPreview", { mode: "card" })}
+            className="h-7 px-2 rounded-md inline-flex items-center gap-1 text-[11.5px] font-medium transition-all whitespace-nowrap shrink-0 border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:shadow-[0_1px_4px_rgba(59,130,246,0.15)]"
+          >
+            <FileCode className="w-3.5 h-3.5 shrink-0" />
+            HTML
+          </button>
+        </Tooltip>
+
+        {/* ② PDF 上传 — 红色突出 */}
+        <Tooltip label="上传 PDF" hint="上传本地 PDF 文件并预览">
+          <button
+            onClick={() => onInsert("file", { fileType: "pdf" })}
+            className="h-7 px-2 rounded-md inline-flex items-center gap-1 text-[11.5px] font-medium transition-all whitespace-nowrap shrink-0 border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-300 hover:shadow-[0_1px_4px_rgba(220,38,38,0.15)]"
+          >
+            <FileType2 className="w-3.5 h-3.5 shrink-0" />
+            PDF
+          </button>
+        </Tooltip>
+
+        {/* ③ 附件下拉：PPT / Word / Excel / 本地文件 */}
+        <Tooltip label="更多附件" hint="PPT / Word / Excel / 本地文件">
           <button
             ref={attachBtnRef}
             onClick={() => setAttachOpen((v) => !v)}
@@ -413,24 +436,26 @@ export function EditorToolbar({
           onClose={() => setAttachOpen(false)}
           anchorRef={attachBtnRef}
           align="start"
-          width={220}
+          width={200}
           className="p-1"
         >
-          <div className="px-2 pt-1 pb-1 text-[10.5px] font-medium tracking-wide text-ink-400">
-            上传文件
-          </div>
           <MoreItem
-            label="本地文件"
-            Icon={Paperclip}
+            label="本地上传"
+            Icon={Upload}
             onClick={() => {
               onInsert("file");
               setAttachOpen(false);
             }}
           />
           <div className="my-1 h-px bg-ink-100" />
-          <div className="px-2 pt-0.5 pb-1 text-[10.5px] font-medium tracking-wide text-ink-400">
-            常用类型
-          </div>
+          <MoreItem
+            label="PPT 演示"
+            Icon={Presentation}
+            onClick={() => {
+              onInsert("pptPreview");
+              setAttachOpen(false);
+            }}
+          />
           <MoreItem
             label="Word 文档"
             Icon={FileType}
@@ -447,23 +472,10 @@ export function EditorToolbar({
               setAttachOpen(false);
             }}
           />
-          <MoreItem
-            label="PDF 文档"
-            Icon={FileType2}
-            onClick={() => {
-              onInsert("file", { fileType: "pdf" });
-              setAttachOpen(false);
-            }}
-          />
-          <MoreItem
-            label="PPT 演示"
-            Icon={Presentation}
-            onClick={() => {
-              onInsert("pptPreview");
-              setAttachOpen(false);
-            }}
-          />
         </FloatingMenu>
+
+        {/* 分隔：附件区 vs 常规元素 */}
+        <div className="h-5 w-px bg-ink-200 mx-0.5 shrink-0 self-center" aria-hidden />
 
         {/* 表格下拉：hover 网格选择 */}
         <Tooltip label="表格" hint="hover 选择行列数">
@@ -533,11 +545,6 @@ export function EditorToolbar({
             }}
           />
         </FloatingMenu>
-
-        {/* 代码 */}
-        <IconBtn label="代码块" onClick={() => onInsert("code")}>
-          <Code className="w-3.5 h-3.5" />
-        </IconBtn>
       </Group>
 
       <Divider />
@@ -569,12 +576,7 @@ export function EditorToolbar({
           maxHeight={420}
           className="p-1.5"
         >
-          {G_INSERT_GROUPS.map((g, gi) => (
-            <div key={g.title} className={gi > 0 ? "mt-1" : ""}>
-              <div className="px-2 pt-1 pb-1 text-[10.5px] font-medium tracking-wide text-ink-400">
-                {g.title}
-              </div>
-              {g.items.map((it) => (
+          {G_INSERT_ITEMS.map((it) => (
                 <button
                   key={it.type + it.label}
                   onClick={() => {
@@ -596,8 +598,6 @@ export function EditorToolbar({
                   </div>
                 </button>
               ))}
-            </div>
-          ))}
         </FloatingMenu>
       </Group>
 

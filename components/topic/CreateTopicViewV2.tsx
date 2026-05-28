@@ -15,7 +15,7 @@ import {
 } from "@/components/topic/TopicVisibilityField";
 import { KeyStrategyLinkField } from "@/components/topic/KeyStrategyLinkField";
 import { KEY_STRATEGY_TAG, MOCK_USERS, USER_DEPARTMENTS } from "@/lib/mock";
-import { nowHHMM, uid } from "@/lib/utils";
+import { genAvatar, nowHHMM, uid } from "@/lib/utils";
 import { createBlock } from "@/components/editor/factory";
 import { EventCard } from "@/components/event/EventCard";
 import type { EventItem } from "@/components/event/types";
@@ -52,7 +52,7 @@ export function CreateTopicViewV2({
   initialAuthorIds,
   initialAuthorRoleDeptId,
   userName = "王志恒",
-  userAvatar = "https://i.pravatar.cc/80?img=12",
+  userAvatar = genAvatar("王志恒"),
   headerExtra,
 }: CreateTopicViewV2Props) {
   const router = useRouter();
