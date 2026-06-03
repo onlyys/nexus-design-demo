@@ -21,6 +21,20 @@ export interface CommentItem {
   replies?: CommentItem[];
 }
 
+/**
+ * 段落级评论线程：针对正文中某个 block / 选中片段
+ * - blockId：评论挂在哪个 block 上
+ * - anchorText：被评论的原文片段（用于右侧评论流回显引用）
+ * - resolved：是否已解决（作者标记）
+ */
+export interface InlineCommentThread {
+  id: string;
+  blockId: string;
+  anchorText: string;
+  comments: CommentItem[];
+  resolved?: boolean;
+}
+
 export interface PublishedEvent {
   id: string;
   /** 序号显示用：#1 / #2 */
@@ -34,8 +48,10 @@ export interface PublishedEvent {
   reactions: { like: number; dislike: number; doubt: number };
   /** AI 对本 Event 的摘要（右侧面板要用） */
   aiSummary: string;
-  /** 评论列表 */
+  /** 评论列表（事件级 —— 针对整个 Event） */
   comments: CommentItem[];
+  /** 段落级评论（针对正文中某段话） */
+  inlineComments?: InlineCommentThread[];
 }
 
 export interface PublishedTopic {
@@ -56,13 +72,19 @@ export interface PublishedTopic {
   /** 标签（编辑页 TopicTagsField 同款 chip 展示） */
   tags: string[];
   /**
+   * Topic 类型：
+   * - normal：普通 Topic
+   * - department：部门 Topic（关联部门关键策略）
+   */
+  topicType?: "normal" | "department";
+  /**
    * 可见范围 —— 在作者视角发布后页面要回显（与发布时一致）
    * 数组元素是 TEAM_OPTIONS 中的 id；空数组表示"全员可见"
    */
   visibility?: string[];
   /** 可见范围模式：all=全员 / dept=仅本部门 / custom=自定义 */
   visibilityMode?: "all" | "dept" | "custom";
-  /** 关联到关键策略：仅当 tags 含「关联关键策略」时存在 */
+  /** 关联到关键策略：仅当 topicType === "department" 时存在 */
   keyStrategy?: {
     departmentId: string;
     strategyId?: string;

@@ -11,10 +11,6 @@ import {
   Image as ImageIcon,
   ExternalLink,
   Check,
-  Maximize2,
-  Download,
-  ChevronLeft,
-  ChevronRight,
   Globe,
   Search,
 } from "lucide-react";
@@ -22,11 +18,28 @@ import { motion } from "framer-motion";
 import { cn, formatBytes, uid } from "@/lib/utils";
 import { Editable, type RichPastePayload } from "../editor/Editable";
 import { ResizableImage } from "./ResizableImage";
+import { AttachmentHoverWrapper } from "./AttachmentHoverWrapper";
+import {
+  UnifiedAttachmentPreview,
+  PdfMockPage,
+  DocMockPage,
+  PptMockSlide,
+} from "./UnifiedAttachmentPreview";
 import type { Block } from "../editor/types";
 import { MOCK_USERS } from "@/lib/mock";
 
-const fileIcon = (t: string) => {
-  switch (t) {
+/** 复制文本到剪贴板（demo 占位实现，失败静默） */
+const copyToClipboard = (text: string) => {
+  if (typeof navigator !== "undefined" && navigator.clipboard) {
+    navigator.clipboard.writeText(text).catch(() => {});
+  }
+};
+
+/** 给附件类 block 生成一条用于复制 / 分享的伪链接 */
+const fileShareUrl = (id: string, name: string) =>
+  `https://nexus.demo/files/${id}/${encodeURIComponent(name)}`;
+
+const fileIcon = (t: string) => {  switch (t) {
     case "pdf":
       return { Icon: FileType, color: "text-red-500", bg: "bg-red-50" };
     case "ppt":
@@ -309,230 +322,266 @@ function BlockContent({
       );
     case "file": {
       const { Icon, color, bg } = fileIcon(block.fileType);
+      const isPdf = block.fileType === "pdf";
+      const isDoc = block.fileType === "doc";
       const isPpt = block.fileType === "ppt";
-      return (
-        <motion.div
-          whileHover={{ y: -1 }}
-          className="my-1.5 flex items-center gap-3 px-3.5 py-3 rounded-xl border border-ink-200 bg-white hover:border-ink-300 hover:shadow-card transition-all"
-        >
-          <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", bg)}>
-            <Icon className={cn("w-5 h-5", color)} strokeWidth={2} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[14px] font-medium text-ink-900 truncate">
-              {block.name}
-            </div>
-            <div className="text-[12px] text-ink-500 mt-0.5">
-              {formatBytes(block.size)}
-            </div>
-          </div>
-          {isPpt && (
-            <button
-              onClick={() =>
-                onUpdate({
-                  id: block.id,
-                  type: "pptPreview",
-                  name: block.name,
-                  totalSlides: 22,
-                  currentSlide: 1,
-                  title: block.name.replace(/\.(pptx?|key)$/i, ""),
-                  subtitle: "由文件块切换为预览模式",
-                  date: new Date().toLocaleDateString("zh-CN", {
-                    year: "numeric",
-                    month: "short",
-                  }),
-                  mainSlide:
-                    "https://images.unsplash.com/photo-1556157382-97eda2d62296?w=1400&q=80",
-                  thumbnails: [
-                    "https://images.unsplash.com/photo-1556157382-97eda2d62296?w=200&q=70",
-                    "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=200&q=70",
-                    "https://images.unsplash.com/photo-1573497019418-b400bb3ab074?w=200&q=70",
-                  ],
-                } as Block)
-              }
-              className="text-[11.5px] text-brand-600 hover:text-brand-700 hover:bg-brand-50 px-2 py-1 rounded-md whitespace-nowrap shrink-0"
-              title="切换为大预览框"
+      // 兼容旧字段：优先 displayMode，其次 pdfDisplayMode
+      const mode: "card" | "preview" =
+        block.displayMode ??
+        (block.pdfDisplayMode === "preview" ? "preview" : "card");
+      // PDF / Word 直接支持内嵌预览；PPT 切到预览要转成 pptPreview block 类型
+      const supportsPreview = isPdf || isDoc || isPpt;
+
+      const setMode = (m: "card" | "preview") => {
+        if (isPpt && m === "preview") {
+          // PPT 切换到预览：转为 pptPreview block 类型
+          onUpdate({
+            id: block.id,
+            type: "pptPreview",
+            name: block.name,
+            totalSlides: 22,
+            currentSlide: 1,
+            title: block.name.replace(/\.(pptx?|key)$/i, ""),
+            subtitle: "由文件块切换为预览模式",
+            date: new Date().toLocaleDateString("zh-CN", {
+              year: "numeric",
+              month: "short",
+            }),
+            mainSlide:
+              "https://images.unsplash.com/photo-1556157382-97eda2d62296?w=1400&q=80",
+            thumbnails: [
+              "https://images.unsplash.com/photo-1556157382-97eda2d62296?w=200&q=70",
+              "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=200&q=70",
+              "https://images.unsplash.com/photo-1573497019418-b400bb3ab074?w=200&q=70",
+            ],
+            displayMode: "preview",
+          } as Block);
+          return;
+        }
+        onUpdate({
+          ...block,
+          displayMode: m,
+          // 兼容旧字段
+          pdfDisplayMode: m === "preview" ? "preview" : "thumbnail",
+        });
+      };
+
+      /* ---- PDF 预览模式（统一外壳） ---- */
+      if (isPdf && mode === "preview") {
+        return (
+          <AttachmentHoverWrapper
+            mode={mode}
+            onChangeMode={setMode}
+            supportsPreview={supportsPreview}
+            onDownload={() => {}}
+            onCopyLink={() =>
+              copyToClipboard(fileShareUrl(block.id, block.name))
+            }
+            onDelete={onDelete}
+          >
+            <UnifiedAttachmentPreview
+              fileType="pdf"
+              name={block.name}
+              size={block.size}
+              currentPage={1}
+              totalPages={28}
             >
-              切换为预览
-            </button>
-          )}
-          <ExternalLink className="w-4 h-4 text-ink-400 shrink-0" />
-        </motion.div>
+              <PdfMockPage />
+            </UnifiedAttachmentPreview>
+          </AttachmentHoverWrapper>
+        );
+      }
+
+      /* ---- Word 预览模式（统一外壳） ---- */
+      if (isDoc && mode === "preview") {
+        return (
+          <AttachmentHoverWrapper
+            mode={mode}
+            onChangeMode={setMode}
+            supportsPreview={supportsPreview}
+            onDownload={() => {}}
+            onCopyLink={() =>
+              copyToClipboard(fileShareUrl(block.id, block.name))
+            }
+            onDelete={onDelete}
+          >
+            <UnifiedAttachmentPreview
+              fileType="doc"
+              name={block.name}
+              size={block.size}
+              currentPage={1}
+              totalPages={12}
+            >
+              <DocMockPage />
+            </UnifiedAttachmentPreview>
+          </AttachmentHoverWrapper>
+        );
+      }
+
+      /* ---- 卡片模式：所有文件类型通用 ---- */
+      return (
+        <AttachmentHoverWrapper
+          mode={mode}
+          onChangeMode={supportsPreview ? setMode : undefined}
+          supportsPreview={supportsPreview}
+          onDownload={() => {}}
+          onCopyLink={() =>
+            copyToClipboard(fileShareUrl(block.id, block.name))
+          }
+          onDelete={onDelete}
+        >
+          <motion.div
+            whileHover={{ y: -1 }}
+            className="my-1.5 flex items-center gap-3 px-3.5 py-3 pr-12 rounded-xl border border-ink-200 bg-white hover:border-ink-300 hover:shadow-card transition-all"
+          >
+            <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", bg)}>
+              <Icon className={cn("w-5 h-5", color)} strokeWidth={2} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14px] font-medium text-ink-900 truncate">
+                {block.name}
+              </div>
+              <div className="text-[12px] text-ink-500 mt-0.5">
+                {formatBytes(block.size)}
+              </div>
+            </div>
+          </motion.div>
+        </AttachmentHoverWrapper>
       );
     }
     case "link": {
-      const display = block.display ?? "plain";
-      const SwitchBar = (
-        <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-white border border-ink-200 text-[11px] shrink-0">
-          {(
-            [
-              { value: "plain", label: "纯链接" },
-              { value: "card", label: "缩略" },
-              { value: "full", label: "整体" },
-            ] as const
-          ).map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => onUpdate({ ...block, display: opt.value })}
-              className={cn(
-                "px-2 py-0.5 rounded transition-colors",
-                display === opt.value
-                  ? "bg-brand-50 text-brand-700"
-                  : "text-ink-500 hover:text-ink-800",
-              )}
-              title={`切换为${opt.label}形态`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      );
+      // 兼容旧 display 字段：plain → card；full → preview；card → card
+      const mode: "card" | "preview" =
+        block.displayMode ??
+        (block.display === "full" ? "preview" : "card");
+      const setMode = (m: "card" | "preview") =>
+        onUpdate({
+          ...block,
+          displayMode: m,
+          // 兼容旧字段：preview 映射回 full，card 映射回 card
+          display: m === "preview" ? "full" : "card",
+        });
 
-      // 形态 1：纯链接（标题 + URL，单行卡）
-      if (display === "plain") {
+      // 形态：紧凑卡（含来源 + 描述 + 封面）
+      if (mode === "card") {
         return (
-          <motion.div
-            whileHover={{ y: -1 }}
-            className="my-1.5 px-4 py-3 rounded-xl border border-ink-200 bg-white hover:border-ink-300 hover:shadow-card transition-all"
+          <AttachmentHoverWrapper
+            mode={mode}
+            onChangeMode={setMode}
+            supportsPreview
+            onCopyLink={() => copyToClipboard(block.url)}
+            onDelete={onDelete}
           >
-            <div className="flex items-start gap-2.5">
-              <div className="mt-0.5 h-5 w-5 rounded-md bg-brand-50 flex items-center justify-center shrink-0">
-                <ExternalLink className="w-3 h-3 text-brand-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-medium text-ink-900 truncate">
-                  {block.title}
+            <div className="my-2 rounded-xl overflow-hidden border border-ink-200 bg-white shadow-card">
+              <div className="flex items-center gap-2 px-3.5 py-2 border-b border-ink-100 bg-ink-50/60 pr-12">
+                <div className="h-5 w-5 rounded-md bg-gradient-to-br from-ink-700 to-ink-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                  {block.faviconText || block.title.slice(0, 1).toUpperCase()}
                 </div>
-                <a
-                  href={block.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[12.5px] text-brand-600 hover:underline break-all"
-                >
-                  {block.url}
-                </a>
-              </div>
-              {SwitchBar}
-            </div>
-          </motion.div>
-        );
-      }
-
-      // 形态 2：缩略卡（含来源 + 描述 + 封面）
-      if (display === "card") {
-        return (
-          <div className="my-2 rounded-xl overflow-hidden border border-ink-200 bg-white shadow-card">
-            <div className="flex items-center gap-2 px-3.5 py-2 border-b border-ink-100 bg-ink-50/60">
-              <div className="h-5 w-5 rounded-md bg-gradient-to-br from-ink-700 to-ink-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                {block.faviconText || block.title.slice(0, 1).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[12px] font-medium text-ink-800 truncate">
-                  {block.siteName || block.title}
-                </div>
-                <div className="text-[11px] text-brand-600 truncate">
-                  {block.url}
+                <div className="flex-1 min-w-0">
+                  <div className="text-[12px] font-medium text-ink-800 truncate">
+                    {block.siteName || block.title}
+                  </div>
+                  <div className="text-[11px] text-brand-600 truncate">
+                    {block.url}
+                  </div>
                 </div>
               </div>
-              {SwitchBar}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-4 px-4 py-4 bg-white">
-              <div className="min-w-0">
-                <div className="text-[15px] font-bold leading-snug text-ink-900">
-                  {block.title}
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-4 px-4 py-4 bg-white">
+                <div className="min-w-0">
+                  <div className="text-[15px] font-bold leading-snug text-ink-900">
+                    {block.title}
+                  </div>
+                  {block.desc && (
+                    <div className="mt-1.5 text-[12.5px] text-ink-600 leading-relaxed line-clamp-3">
+                      {block.desc}
+                    </div>
+                  )}
+                  <a
+                    href={block.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-medium text-brand-600 hover:underline"
+                  >
+                    在浏览器中查看原文
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
                 </div>
-                {block.desc && (
-                  <div className="mt-1.5 text-[12.5px] text-ink-600 leading-relaxed line-clamp-3">
-                    {block.desc}
+                {block.cover && (
+                  <div className="rounded-lg overflow-hidden border border-ink-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={block.cover}
+                      alt=""
+                      className="block w-full h-[100px] object-cover"
+                    />
                   </div>
                 )}
-                <a
-                  href={block.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-medium text-brand-600 hover:underline"
-                >
-                  在浏览器中查看原文
-                  <ExternalLink className="w-3 h-3" />
-                </a>
               </div>
-              {block.cover && (
-                <div className="rounded-lg overflow-hidden border border-ink-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={block.cover}
-                    alt=""
-                    className="block w-full h-[100px] object-cover"
-                  />
-                </div>
-              )}
             </div>
-          </div>
+          </AttachmentHoverWrapper>
         );
       }
 
-      // 形态 3：整体内嵌（带浏览器外壳的大卡）
+      // 形态：preview —— 整体内嵌（带浏览器外壳的大卡）
       return (
-        <div className="my-2 rounded-xl overflow-hidden border border-brand-200 bg-white shadow-card">
-          {/* 浏览器栏 + 切换 */}
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-ink-100 bg-ink-50/80">
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-400/80" />
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
-            </div>
-            <div className="flex-1 mx-2 h-6 px-2.5 rounded-md bg-white border border-ink-200 flex items-center text-[11.5px] text-ink-500 truncate">
-              <Globe className="w-3 h-3 mr-1.5 text-ink-400 shrink-0" />
-              {block.url}
-            </div>
-            {SwitchBar}
-            <a
-              href={block.url}
-              target="_blank"
-              rel="noreferrer"
-              title="在浏览器中打开"
-              className="h-6 w-6 rounded-md text-ink-400 hover:text-ink-700 hover:bg-ink-100 inline-flex items-center justify-center shrink-0"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          </div>
-          {/* 内容主体 */}
-          {block.cover && (
-            <div className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={block.cover}
-                alt=""
-                className="block w-full h-[260px] object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-              <div className="absolute bottom-5 left-6 right-6 text-white">
-                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/15 backdrop-blur-sm text-[11px] font-medium">
-                  {block.siteName || "外部网页"}
-                </div>
-                <h1 className="mt-3 text-[24px] font-bold leading-tight tracking-tight max-w-[680px]">
-                  {block.title}
-                </h1>
+        <AttachmentHoverWrapper
+          mode={mode}
+          onChangeMode={setMode}
+          supportsPreview
+          onCopyLink={() => copyToClipboard(block.url)}
+          onDelete={onDelete}
+        >
+          <div className="my-2 rounded-xl overflow-hidden border border-brand-200 bg-white shadow-card">
+            {/* 浏览器栏 */}
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-ink-100 bg-ink-50/80 pr-12">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-400/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
+              </div>
+              <div className="flex-1 mx-2 h-6 px-2.5 rounded-md bg-white border border-ink-200 flex items-center text-[11.5px] text-ink-500 truncate">
+                <Globe className="w-3 h-3 mr-1.5 text-ink-400 shrink-0" />
+                {block.url}
               </div>
             </div>
-          )}
-          <div className="px-6 py-5">
-            {block.desc && (
-              <p className="text-[14.5px] leading-[1.85] text-ink-800">
-                {block.desc}
-              </p>
+            {/* 内容主体 */}
+            {block.cover && (
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={block.cover}
+                  alt=""
+                  className="block w-full h-[260px] object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                <div className="absolute bottom-5 left-6 right-6 text-white">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/15 backdrop-blur-sm text-[11px] font-medium">
+                    {block.siteName || "外部网页"}
+                  </div>
+                  <h1 className="mt-3 text-[24px] font-bold leading-tight tracking-tight max-w-[680px]">
+                    {block.title}
+                  </h1>
+                </div>
+              </div>
             )}
-            <a
-              href={block.url}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-flex items-center gap-1 text-[12.5px] font-medium text-brand-600 hover:underline"
-            >
-              查看完整原文
-              <ExternalLink className="w-3 h-3" />
-            </a>
+            <div className="px-6 py-5">
+              {block.desc && (
+                <p className="text-[14.5px] leading-[1.85] text-ink-800">
+                  {block.desc}
+                </p>
+              )}
+              <a
+                href={block.url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex items-center gap-1 text-[12.5px] font-medium text-brand-600 hover:underline"
+              >
+                查看完整原文
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           </div>
-        </div>
+        </AttachmentHoverWrapper>
       );
     }
     case "todo":
@@ -644,181 +693,107 @@ function BlockContent({
           />
         </div>
       );
-    case "pptPreview":
-      return (
-        <div className="my-2.5 rounded-xl overflow-hidden border border-ink-200 bg-[#0e1116] shadow-card">
-          {/* 顶部条 */}
-          <div className="flex items-center justify-between px-3 py-2 bg-[#181d24] text-ink-300">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="flex flex-col gap-[2px]">
-                <span className="block w-3.5 h-[2px] bg-ink-400" />
-                <span className="block w-3.5 h-[2px] bg-ink-400" />
-                <span className="block w-3.5 h-[2px] bg-ink-400" />
-              </div>
-              <span className="text-[12px] font-mono text-ink-300 truncate">
-                {block.name}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-[11.5px] text-ink-400">
-              <span>
-                {block.currentSlide} / {block.totalSlides}
-              </span>
-              <button
-                onClick={() =>
-                  onUpdate({
-                    id: block.id,
-                    type: "file",
-                    name: block.name || "演示文稿.pptx",
-                    size: 2.3 * 1024 * 1024,
-                    fileType: "ppt",
-                  } as Block)
-                }
-                className="px-2 py-0.5 rounded text-ink-300 hover:text-white hover:bg-white/10 transition-colors"
-                title="切换为普通文件块"
-              >
-                切换为文件块
-              </button>
-              <button className="h-6 w-6 rounded-md inline-flex items-center justify-center hover:bg-white/5">
-                <Download className="w-3.5 h-3.5" />
-              </button>
-              <button className="h-6 w-6 rounded-md inline-flex items-center justify-center hover:bg-white/5">
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-          {/* 主区：左缩略 + 右幻灯片 */}
-          <div className="flex bg-[#0e1116]">
-            <div className="w-[120px] shrink-0 border-r border-white/10 py-3 px-2 flex flex-col gap-2">
-              {block.thumbnails.map((t, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "rounded-md overflow-hidden border",
-                    i === 0
-                      ? "border-brand-400 ring-2 ring-brand-400/40"
-                      : "border-white/10",
-                  )}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={t}
-                    alt=""
-                    className="block w-full h-[60px] object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="flex-1 min-w-0 p-6 flex flex-col items-center justify-center text-white relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={block.mainSlide}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover opacity-30"
-              />
-              <div className="relative z-10 text-center">
-                <div className="text-[22px] font-bold tracking-tight">
-                  {block.title}
-                </div>
-                {block.subtitle && (
-                  <div className="mt-1.5 text-[13px] text-ink-300">
-                    {block.subtitle}
-                  </div>
-                )}
-                {block.date && (
-                  <div className="mt-4 text-[11.5px] text-ink-400">
-                    {block.date}
-                  </div>
-                )}
-              </div>
-              {/* 左右箭头 */}
-              <button className="absolute left-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center">
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    case "htmlPreview": {
-      const mode = block.mode ?? "card";
-      const isFull = mode === "full";
-      const isPlain = mode === "plain";
-
-      // 三态切换分段控件（与 link block 形态保持一致）
-      const SwitchBar = (
-        <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-white border border-ink-200 text-[11px] shrink-0">
-          {(
-            [
-              { value: "plain", label: "纯链接" },
-              { value: "card", label: "缩略" },
-              { value: "full", label: "整体" },
-            ] as const
-          ).map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => onUpdate({ ...block, mode: opt.value })}
-              className={cn(
-                "px-2 py-0.5 rounded transition-colors",
-                mode === opt.value
-                  ? "bg-brand-50 text-brand-700"
-                  : "text-ink-500 hover:text-ink-800",
-              )}
-              title={`切换为${opt.label}形态`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      );
-
-      // 形态 1：纯链接（标题 + URL 一行卡）
-      if (isPlain) {
-        return (
-          <motion.div
-            whileHover={{ y: -1 }}
-            className="my-1.5 px-4 py-3 rounded-xl border border-ink-200 bg-white hover:border-ink-300 hover:shadow-card transition-all"
-          >
-            <div className="flex items-start gap-2.5">
-              <div className="mt-0.5 h-5 w-5 rounded-md bg-brand-50 flex items-center justify-center shrink-0">
-                <ExternalLink className="w-3 h-3 text-brand-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-medium text-ink-900 truncate">
-                  {block.siteName}：{block.pageTitle}
-                </div>
-                <a
-                  href={block.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[12.5px] text-brand-600 hover:underline break-all"
-                >
-                  {block.url}
-                </a>
-              </div>
-              {SwitchBar}
-              <button
-                onClick={onDelete}
-                className="h-6 w-6 rounded-md text-ink-400 hover:text-ink-700 hover:bg-ink-100 inline-flex items-center justify-center shrink-0"
-                title="移除"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </motion.div>
-        );
-      }
+    case "pptPreview": {
+      const mode: "card" | "preview" = block.displayMode ?? "preview";
+      const setMode = (m: "card" | "preview") => {
+        if (m === "card") {
+          // 切到卡片：转回 file block (fileType=ppt)
+          onUpdate({
+            id: block.id,
+            type: "file",
+            name: block.name || "演示文稿.pptx",
+            size: 2.3 * 1024 * 1024,
+            fileType: "ppt",
+            displayMode: "card",
+          } as Block);
+        } else {
+          onUpdate({ ...block, displayMode: m });
+        }
+      };
 
       return (
-        <div
-          className={cn(
-            "my-2.5 rounded-xl overflow-hidden border bg-white shadow-card",
-            isFull ? "border-brand-200" : "border-ink-200",
-          )}
+        <AttachmentHoverWrapper
+          mode={mode}
+          onChangeMode={setMode}
+          supportsPreview
+          onDownload={() => {}}
+          onCopyLink={() =>
+            copyToClipboard(fileShareUrl(block.id, block.name))
+          }
+          onDelete={onDelete}
         >
-          {/* 来源条 + 形态切换 */}
-          <div className="flex items-center gap-2 px-3.5 py-2 border-b border-ink-100 bg-ink-50/60">
+          <UnifiedAttachmentPreview
+            fileType="ppt"
+            name={block.name}
+            currentPage={block.currentSlide}
+            totalPages={block.totalSlides}
+            pageUnit="张"
+          >
+            <PptMockSlide
+              image={block.mainSlide}
+              title={block.title}
+              subtitle={block.subtitle}
+              date={block.date}
+            />
+          </UnifiedAttachmentPreview>
+        </AttachmentHoverWrapper>
+      );
+    }
+    case "htmlPreview": {
+      // 兼容旧 mode 字段：plain → card；full → preview；card → card
+      const mode: "card" | "preview" =
+        block.displayMode ??
+        (block.mode === "full" ? "preview" : "card");
+      const isFull = mode === "preview";
+      const setMode = (m: "card" | "preview") =>
+        onUpdate({
+          ...block,
+          displayMode: m,
+          mode: m === "preview" ? "full" : "card",
+        });
+
+      return (
+        <AttachmentHoverWrapper
+          mode={mode}
+          onChangeMode={setMode}
+          supportsPreview
+          onCopyLink={() => copyToClipboard(block.url)}
+          onDelete={onDelete}
+        >
+        {/* card 形态：紧凑缩略卡（标题 + URL + 缩略图，不展示页面内容） */}
+        {!isFull && (
+          <div className="my-1.5 flex items-center gap-3 px-3.5 py-3 pr-12 rounded-xl border border-ink-200 bg-white hover:border-ink-300 hover:shadow-card transition-all">
+            <div className="h-12 w-12 rounded-md overflow-hidden border border-ink-100 shrink-0 bg-ink-50">
+              {block.cover ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={block.cover}
+                  alt=""
+                  className="block w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-ink-700 to-ink-900 text-white text-[14px] font-bold flex items-center justify-center">
+                  {block.faviconText || "·"}
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14px] font-medium text-ink-900 truncate">
+                {block.pageTitle}
+              </div>
+              <div className="text-[12px] text-ink-500 mt-0.5 truncate flex items-center gap-1">
+                <Globe className="w-3 h-3 shrink-0 text-ink-400" />
+                {block.url}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* preview 形态：完整网页内嵌（保留浏览器外壳 + 整页 HTML 渲染） */}
+        {isFull && (
+        <div className="my-2.5 rounded-xl overflow-hidden border bg-white shadow-card border-brand-200">
+          {/* 来源条 */}
+          <div className="flex items-center gap-2 px-3.5 py-2 border-b border-ink-100 bg-ink-50/60 pr-12">
             <div className="h-5 w-5 rounded-md bg-gradient-to-br from-ink-700 to-ink-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
               {block.faviconText || "·"}
             </div>
@@ -830,76 +805,9 @@ function BlockContent({
                 {block.url}
               </div>
             </div>
-            {SwitchBar}
-            <button
-              onClick={onDelete}
-              className="h-6 w-6 rounded-md text-ink-400 hover:text-ink-700 hover:bg-ink-100 inline-flex items-center justify-center shrink-0"
-              title="移除"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
           </div>
 
-          {/* 内嵌网页预览 —— card 形态：紧凑 */}
-          {!isFull && (
-            <div className="bg-white">
-              <div className="flex items-center justify-between px-5 py-3 border-b border-ink-100">
-                <div className="text-[15px] font-bold tracking-tight text-ink-900 truncate max-w-[60%]">
-                  {block.siteName}
-                </div>
-                <div className="flex items-center gap-4 text-[11.5px] text-ink-600">
-                  <span className="inline-flex items-center gap-0.5">
-                    项目
-                    <span className="text-ink-400">▾</span>
-                  </span>
-                  <span className="inline-flex items-center gap-0.5">
-                    实验室
-                    <span className="text-ink-400">▾</span>
-                  </span>
-                  <span>新闻</span>
-                  <span className="inline-flex items-center gap-0.5">
-                    加入我们
-                    <span className="text-ink-400">▾</span>
-                  </span>
-                  <Search className="w-3.5 h-3.5 text-ink-400" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-4 px-5 py-5">
-                <div>
-                  <div className="text-[18px] font-bold leading-tight text-ink-900">
-                    {block.pageTitle}
-                  </div>
-                  {block.description && (
-                    <div className="mt-2 text-[12.5px] text-ink-600 leading-relaxed">
-                      {block.description}
-                    </div>
-                  )}
-                  <a
-                    href={block.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-medium text-brand-600 hover:underline"
-                  >
-                    在浏览器中查看原文
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-                {block.cover && (
-                  <div className="rounded-lg overflow-hidden border border-ink-100">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={block.cover}
-                      alt=""
-                      className="block w-full h-[110px] object-cover"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* 内嵌网页预览 —— full 形态：完整网页阅读（可滚动浏览整页） */}
-          {isFull && (
             <div className="bg-white">
               {/* 浏览器地址栏 */}
               <div className="flex items-center gap-2 px-4 py-2 border-b border-ink-100 bg-ink-50/80">
@@ -1296,8 +1204,9 @@ function BlockContent({
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+        </AttachmentHoverWrapper>
       );
     }
   }

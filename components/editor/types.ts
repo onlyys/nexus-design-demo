@@ -52,6 +52,17 @@ export interface FileBlock extends BaseBlock {
   fileType: "pdf" | "ppt" | "doc" | "xls" | "image" | "other";
   /** 是否使用 PDF 大缩略卡（仅 fileType=pdf 时有意义） */
   pdfPreview?: boolean;
+  /**
+   * 旧字段（保留兼容）：仅 fileType=pdf 时有意义；新代码请用 displayMode。
+   */
+  pdfDisplayMode?: "preview" | "thumbnail";
+  /**
+   * 统一展示形态（PDF / PPT / HTML / 图片等支持预览的附件）：
+   * - card：紧凑文件卡（默认）
+   * - preview：内嵌预览（PDF 大预览 / PPT 幻灯片 / HTML 嵌入网页 等）
+   * 注：非常见文件类型（doc/xls/other）不支持 preview，固定为 card。
+   */
+  displayMode?: "card" | "preview";
 }
 
 export interface LinkBlock extends BaseBlock {
@@ -60,12 +71,12 @@ export interface LinkBlock extends BaseBlock {
   url: string;
   desc?: string;
   /**
-   * 展示形态：
-   * - plain：纯链接（标题 + URL）
-   * - card：缩略卡片（含来源图标 / 描述 / 封面缩略）
-   * - full：整体内嵌（占位完整网页阅读体验）
+   * 旧字段（保留兼容）：plain/card/full 三态。
+   * 新代码请用 displayMode（card / preview 二态）。
    */
   display?: "plain" | "card" | "full";
+  /** 统一展示形态：card 紧凑卡 / preview 内嵌网页 */
+  displayMode?: "card" | "preview";
   /** 缩略 / 整体形态下使用的额外信息 */
   siteName?: string;
   cover?: string;
@@ -98,6 +109,8 @@ export interface PptPreviewBlock extends BaseBlock {
   date?: string;
   thumbnails: string[]; // 缩略图 URL
   mainSlide: string; // 主预览幻灯片 URL（这里用图片占位）
+  /** 统一展示形态：card 紧凑文件卡 / preview 大幻灯片预览（默认 preview） */
+  displayMode?: "card" | "preview";
 }
 
 export interface HtmlPreviewBlock extends BaseBlock {
@@ -109,12 +122,12 @@ export interface HtmlPreviewBlock extends BaseBlock {
   cover?: string; // 顶图
   faviconText?: string; // 占位图标文字
   /**
-   * 展示形态（与 LinkBlock 三态保持一致）：
-   * - plain：纯链接（标题 + URL 单行卡，最轻量）
-   * - card：缩略卡片 —— 紧凑展示，混排在 block 流里
-   * - full：整体内嵌 —— 占满 Event 主区，模拟完整网页阅读体验
+   * 旧字段（保留兼容）：plain / card / full 三态。
+   * 新代码请用 displayMode。
    */
   mode?: "plain" | "card" | "full";
+  /** 统一展示形态：card 紧凑卡片 / preview 嵌入网页 */
+  displayMode?: "card" | "preview";
 }
 
 export type Block =

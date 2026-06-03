@@ -145,6 +145,62 @@ export function EditorToolbar({
       )}
       style={{ overflow: "visible" }}
     >
+      {/* ============ 上传区（最前） ============ */}
+      <Group>
+        {/* 主按钮：本地上传（下拉含 PPT/Word/Excel/其他） */}
+        <Tooltip label="本地上传" hint="PPT / Word / Excel / 其他文件">
+          <button
+            ref={attachBtnRef}
+            onClick={() => setAttachOpen((v) => !v)}
+            className={cn(
+              "h-7 px-2.5 rounded-md inline-flex items-center gap-1 text-[11.5px] font-semibold transition-all whitespace-nowrap shrink-0 border border-brand-300 bg-brand-50 text-brand-700 hover:bg-brand-100 hover:border-brand-400 hover:shadow-[0_1px_6px_rgba(59,130,246,0.2)]",
+            )}
+          >
+            <Upload className="w-3.5 h-3.5 shrink-0" />
+            本地上传
+            <ChevronDown className="w-3 h-3 text-brand-400 shrink-0" />
+          </button>
+        </Tooltip>
+        <FloatingMenu
+          open={attachOpen}
+          onClose={() => setAttachOpen(false)}
+          anchorRef={attachBtnRef}
+          align="start"
+          width={180}
+          className="p-1"
+        >
+          <MoreItem label="PPT 演示" Icon={Presentation} onClick={() => { onInsert("pptPreview"); setAttachOpen(false); }} />
+          <MoreItem label="Word 文档" Icon={FileType} onClick={() => { onInsert("file", { fileType: "doc" }); setAttachOpen(false); }} />
+          <MoreItem label="Excel 表格" Icon={FileSpreadsheet} onClick={() => { onInsert("file", { fileType: "xls" }); setAttachOpen(false); }} />
+          <div className="my-1 h-px bg-ink-100" />
+          <MoreItem label="其他文件" Icon={Upload} onClick={() => { onInsert("file"); setAttachOpen(false); }} />
+        </FloatingMenu>
+
+        {/* HTML 快捷 */}
+        <Tooltip label="上传 HTML" hint="上传本地 HTML 文件并在页面中预览">
+          <button
+            onClick={() => onInsert("htmlPreview", { mode: "card" })}
+            className="h-7 px-2 rounded-md inline-flex items-center gap-1 text-[11.5px] font-medium transition-all whitespace-nowrap shrink-0 border border-ink-200 bg-white text-ink-700 hover:bg-ink-50 hover:border-ink-300"
+          >
+            <Upload className="w-3.5 h-3.5 shrink-0 text-ink-400" />
+            HTML
+          </button>
+        </Tooltip>
+
+        {/* PDF 快捷 */}
+        <Tooltip label="上传 PDF" hint="上传本地 PDF 文件并预览">
+          <button
+            onClick={() => onInsert("file", { fileType: "pdf" })}
+            className="h-7 px-2 rounded-md inline-flex items-center gap-1 text-[11.5px] font-medium transition-all whitespace-nowrap shrink-0 border border-ink-200 bg-white text-ink-700 hover:bg-ink-50 hover:border-ink-300"
+          >
+            <Upload className="w-3.5 h-3.5 shrink-0 text-ink-400" />
+            PDF
+          </button>
+        </Tooltip>
+      </Group>
+
+      <Divider />
+
       {/* ============ A 撤销区 ============ */}
       <Group>
         <IconBtn label="撤销" hint="Cmd+Z" onClick={noop}>
@@ -391,92 +447,6 @@ export function EditorToolbar({
 
       {/* ============ F 元素块区 ============ */}
       <Group>
-        {/* ===== 附件上传分区 ===== */}
-
-        {/* ① HTML 上传 — 蓝色突出 */}
-        <Tooltip label="上传 HTML" hint="上传本地 HTML 文件并在页面中预览">
-          <button
-            onClick={() => onInsert("htmlPreview", { mode: "card" })}
-            className="h-7 px-2 rounded-md inline-flex items-center gap-1 text-[11.5px] font-medium transition-all whitespace-nowrap shrink-0 border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:shadow-[0_1px_4px_rgba(59,130,246,0.15)]"
-          >
-            <FileCode className="w-3.5 h-3.5 shrink-0" />
-            HTML
-          </button>
-        </Tooltip>
-
-        {/* ② PDF 上传 — 红色突出 */}
-        <Tooltip label="上传 PDF" hint="上传本地 PDF 文件并预览">
-          <button
-            onClick={() => onInsert("file", { fileType: "pdf" })}
-            className="h-7 px-2 rounded-md inline-flex items-center gap-1 text-[11.5px] font-medium transition-all whitespace-nowrap shrink-0 border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-300 hover:shadow-[0_1px_4px_rgba(220,38,38,0.15)]"
-          >
-            <FileType2 className="w-3.5 h-3.5 shrink-0" />
-            PDF
-          </button>
-        </Tooltip>
-
-        {/* ③ 附件下拉：PPT / Word / Excel / 本地文件 */}
-        <Tooltip label="更多附件" hint="PPT / Word / Excel / 本地文件">
-          <button
-            ref={attachBtnRef}
-            onClick={() => setAttachOpen((v) => !v)}
-            className={cn(
-              "h-7 px-1.5 rounded-md inline-flex items-center gap-0.5 transition-colors shrink-0",
-              attachOpen
-                ? "bg-ink-100 text-ink-900"
-                : "text-ink-700 hover:bg-ink-50",
-            )}
-          >
-            <Paperclip className="w-3.5 h-3.5" />
-            <ChevronDown className="w-3 h-3 text-ink-400" />
-          </button>
-        </Tooltip>
-        <FloatingMenu
-          open={attachOpen}
-          onClose={() => setAttachOpen(false)}
-          anchorRef={attachBtnRef}
-          align="start"
-          width={200}
-          className="p-1"
-        >
-          <MoreItem
-            label="本地上传"
-            Icon={Upload}
-            onClick={() => {
-              onInsert("file");
-              setAttachOpen(false);
-            }}
-          />
-          <div className="my-1 h-px bg-ink-100" />
-          <MoreItem
-            label="PPT 演示"
-            Icon={Presentation}
-            onClick={() => {
-              onInsert("pptPreview");
-              setAttachOpen(false);
-            }}
-          />
-          <MoreItem
-            label="Word 文档"
-            Icon={FileType}
-            onClick={() => {
-              onInsert("file", { fileType: "doc" });
-              setAttachOpen(false);
-            }}
-          />
-          <MoreItem
-            label="Excel 表格"
-            Icon={FileSpreadsheet}
-            onClick={() => {
-              onInsert("file", { fileType: "xls" });
-              setAttachOpen(false);
-            }}
-          />
-        </FloatingMenu>
-
-        {/* 分隔：附件区 vs 常规元素 */}
-        <div className="h-5 w-px bg-ink-200 mx-0.5 shrink-0 self-center" aria-hidden />
-
         {/* 表格下拉：hover 网格选择 */}
         <Tooltip label="表格" hint="hover 选择行列数">
           <button

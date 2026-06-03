@@ -13,7 +13,7 @@ export function TitleInput({ value, onChange, max = 100 }: TitleInputProps) {
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value.slice(0, max))}
-          placeholder="输入 Topic 主题…"
+          placeholder="输入主题名称…"
           rows={1}
           className="flex-1 resize-none bg-transparent text-[36px] leading-[1.25] font-bold tracking-tight text-ink-900 placeholder:text-ink-400/80 outline-none border-0 py-1"
           style={{ fontFamily: "Inter, 'PingFang SC', sans-serif" }}

@@ -10,11 +10,15 @@ import { AuthorsField } from "@/components/topic/AuthorsField";
 import { AuthorRoleField } from "@/components/topic/AuthorRoleField";
 import { TopicTagsField } from "@/components/topic/TopicTagsField";
 import {
+  TopicTypeField,
+  type TopicType,
+} from "@/components/topic/TopicTypeField";
+import {
   TopicVisibilityField,
   type VisibilityValue,
 } from "@/components/topic/TopicVisibilityField";
 import { KeyStrategyLinkField } from "@/components/topic/KeyStrategyLinkField";
-import { KEY_STRATEGY_TAG, MOCK_USERS, USER_DEPARTMENTS } from "@/lib/mock";
+import { MOCK_USERS, USER_DEPARTMENTS } from "@/lib/mock";
 import { genAvatar, nowHHMM, uid } from "@/lib/utils";
 import { createBlock } from "@/components/editor/factory";
 import { EventCard } from "@/components/event/EventCard";
@@ -33,9 +37,16 @@ export interface CreateTopicViewV2Props {
   initialAuthorIds?: string[];
   initialAuthorRoleDeptId?: string;
   initialVisibility?: VisibilityValue;
+  initialTopicType?: TopicType;
   userName?: string;
   userAvatar?: string;
   headerExtra?: React.ReactNode;
+
+  /** 回编模式：从已发布 Topic 进入编辑器 */
+  editMode?: "create" | "edit-published";
+  publishedTopicId?: string;
+  focusEventId?: string;
+  appendNewEvent?: boolean;
 }
 
 /**
@@ -51,11 +62,17 @@ export function CreateTopicViewV2({
   initialVisibility,
   initialAuthorIds,
   initialAuthorRoleDeptId,
+  initialTopicType = "normal",
   userName = "王志恒",
   userAvatar = genAvatar("王志恒"),
   headerExtra,
+  editMode = "create",
+  publishedTopicId,
+  focusEventId,
+  appendNewEvent = false,
 }: CreateTopicViewV2Props) {
   const router = useRouter();
+  const isEditPublished = editMode === "edit-published";
   const [title, setTitle] = React.useState(initialTitle);
 
   // —— Topic 元信息 ——
@@ -77,6 +94,8 @@ export function CreateTopicViewV2({
   );
 
   const [tagsList, setTagsList] = React.useState<string[]>([]);
+  const [topicType, setTopicType] =
+    React.useState<TopicType>(initialTopicType);
   const [visibility, setVisibility] = React.useState<VisibilityValue>(
     () =>
       initialVisibility ?? {
@@ -89,7 +108,7 @@ export function CreateTopicViewV2({
     departmentId: string;
     strategyId?: string;
   }>({ departmentId: authorRoleDeptId });
-  const showKeyStrategyPanel = tagsList.includes(KEY_STRATEGY_TAG);
+  const showKeyStrategyPanel = topicType === "department";
 
   React.useEffect(() => {
     setKeyStrategy((prev) => ({
@@ -166,6 +185,13 @@ export function CreateTopicViewV2({
     } catch {
       container.scrollTop = Math.max(0, targetY);
     }
+    // 二次校正：smooth 动画期间内容布局可能变动，700ms 后再矫正一次
+    setTimeout(() => {
+      const after = container.scrollTop;
+      if (Math.abs(after - targetY) > 80) {
+        container.scrollTop = Math.max(0, targetY);
+      }
+    }, 700);
     el.classList.add("event-flash");
     window.setTimeout(() => el.classList.remove("event-flash"), 900);
   }, []);
@@ -316,6 +342,132 @@ export function CreateTopicViewV2({
     }, 500);
   };
 
+  // —— IntersectionObserver：滚动时自动同步 activeEventId ——
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (events.length === 0) return;
+
+    const root = document.getElementById("main-scroll-area-v2");
+    if (!root) return;
+
+    const ratios = new Map<string, number>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const id = (entry.target as HTMLElement).dataset.eventId;
+          if (!id) return;
+          ratios.set(id, entry.isIntersecting ? entry.intersectionRatio : 0);
+        });
+        let best: { id: string; ratio: number; top: number } | null = null;
+        events.forEach((ev) => {
+          const el = document.getElementById(`event-${ev.id}`);
+          if (!el) return;
+          const ratio = ratios.get(ev.id) ?? 0;
+          const top =
+            el.getBoundingClientRect().top -
+            root.getBoundingClientRect().top;
+          if (
+            !best ||
+            ratio > best.ratio ||
+            (ratio === best.ratio && Math.abs(top) < Math.abs(best.top))
+          ) {
+            best = { id: ev.id, ratio, top };
+          }
+        });
+        const picked =
+          best as { id: string; ratio: number; top: number } | null;
+        if (picked && picked.id !== activeIdRef.current) {
+          setActiveEventId(picked.id);
+        }
+      },
+      {
+        root,
+        rootMargin: "-24px 0px -55% 0px",
+        threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
+      },
+    );
+
+    events.forEach((ev) => {
+      const el = document.getElementById(`event-${ev.id}`);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [events]);
+
+  // —— 回编模式：进入时自动定位到目标 Event / 末尾新建 Event ——
+  const pendingScrollIdRef = React.useRef<string | null>(null);
+  const didApplyEditQuery = React.useRef(false);
+
+  React.useEffect(() => {
+    if (didApplyEditQuery.current) return;
+    if (!isEditPublished) return;
+    if (typeof window === "undefined") return;
+
+    if (appendNewEvent) {
+      didApplyEditQuery.current = true;
+      const newEv: EventItem = {
+        id: uid(),
+        title: "",
+        blocks: [createBlock("text")],
+      };
+      pendingScrollIdRef.current = newEv.id;
+      setEvents((prev) => [...prev, newEv]);
+      setActiveEventId(newEv.id);
+      return;
+    }
+
+    if (focusEventId) {
+      didApplyEditQuery.current = true;
+      const target = events.find((e) => e.id === focusEventId) ?? events[0];
+      if (target) {
+        pendingScrollIdRef.current = target.id;
+        setActiveEventId(target.id);
+      }
+      return;
+    }
+
+    didApplyEditQuery.current = true;
+  }, [
+    isEditPublished,
+    appendNewEvent,
+    focusEventId,
+    events,
+    scrollToEvent,
+  ]);
+
+  // 等目标 Event 卡片真正挂载到 DOM 后再滚动
+  React.useLayoutEffect(() => {
+    const id = pendingScrollIdRef.current;
+    if (!id) return;
+    if (typeof window === "undefined") return;
+
+    let cancelled = false;
+    let raf: number | undefined;
+
+    const tryScroll = (attempt: number) => {
+      if (cancelled) return;
+      const el = document.getElementById(`event-${id}`);
+      const container = document.getElementById("main-scroll-area-v2");
+      if (el && container) {
+        scrollToEvent(id);
+        pendingScrollIdRef.current = null;
+        return;
+      }
+      if (attempt < 15) {
+        raf = requestAnimationFrame(() => tryScroll(attempt + 1));
+      } else {
+        pendingScrollIdRef.current = null;
+      }
+    };
+
+    raf = requestAnimationFrame(() => tryScroll(0));
+    return () => {
+      cancelled = true;
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [events, scrollToEvent]);
+
   return (
     <div className="h-screen bg-ink-50 flex flex-col overflow-hidden">
       <Header userName={userName} userAvatar={userAvatar} extra={headerExtra} />
@@ -330,13 +482,35 @@ export function CreateTopicViewV2({
           className="flex-1 min-w-0 h-full overflow-y-auto"
         >
           <div className="w-full px-8 py-6 space-y-4">
+            {isEditPublished && (
+              <EditPublishedBanner
+                onBack={() =>
+                  router.push(
+                    `/topic/${publishedTopicId ?? "demo"}?view=author`,
+                  )
+                }
+              />
+            )}
+
             <TopicActionBar
               saving={saving}
               savedAt={savedAt}
-              mode="create"
+              mode={isEditPublished ? "edit-published" : "create"}
               onSaveDraft={handleManualSave}
-              onPreview={() => router.push("/topic/demo?view=author")}
-              onPublish={() => router.push("/topic/demo?view=author")}
+              onPreview={() =>
+                router.push(`/topic/${publishedTopicId ?? "demo"}?view=author`)
+              }
+              onPublish={() =>
+                router.push(`/topic/${publishedTopicId ?? "demo"}?view=author`)
+              }
+              onCancel={
+                isEditPublished
+                  ? () =>
+                      router.push(
+                        `/topic/${publishedTopicId ?? "demo"}?view=author`,
+                      )
+                  : undefined
+              }
             />
 
             {/* Topic 头部卡片 */}
@@ -357,7 +531,7 @@ export function CreateTopicViewV2({
                 </div>
 
                 <div className="mt-5 space-y-4">
-                  <TopicTagsField value={tagsList} onChange={setTagsList} />
+                  <TopicTypeField value={topicType} onChange={setTopicType} />
                   {showKeyStrategyPanel && (
                     <KeyStrategyLinkField
                       departmentId={authorRoleDeptId}
@@ -365,6 +539,7 @@ export function CreateTopicViewV2({
                       onChange={setKeyStrategy}
                     />
                   )}
+                  <TopicTagsField value={tagsList} onChange={setTagsList} />
                   <TopicVisibilityField
                     value={visibility}
                     onChange={setVisibility}
@@ -401,12 +576,12 @@ export function CreateTopicViewV2({
                 onClick={addEvent}
                 className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-md border border-dashed border-ink-300 bg-white text-[13px] text-ink-600 hover:text-brand-600 hover:border-brand-400 hover:bg-brand-50/40 transition-colors"
               >
-                + 增加事件 Event
+                + 增加子主题
               </button>
             </div>
 
             <footer className="mt-2 mb-4 flex items-center justify-between text-[11.5px] text-ink-400">
-              <span>共 {events.length} 个 Event</span>
+              <span>共 {events.length} 个子主题</span>
               <span>共 {wordCount} 个字</span>
             </footer>
           </div>
@@ -421,6 +596,28 @@ export function CreateTopicViewV2({
 }
 
 /* —————————————————— 工具函数 —————————————————— */
+
+/** 顶部"正在编辑已发布 Topic"提示条 */
+function EditPublishedBanner({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-md border border-amber-200 bg-amber-50/70 text-[12.5px] text-amber-800">
+      <span className="inline-flex items-center gap-2 min-w-0">
+        <span className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-[11px] font-semibold">
+          ✎
+        </span>
+        <span className="truncate">
+          正在编辑已发布的主题 — 保存后将<strong className="font-semibold">直接覆盖发布版本</strong>，订阅者可见。
+        </span>
+      </span>
+      <button
+        onClick={onBack}
+        className="shrink-0 inline-flex items-center h-6 px-2 rounded-md border border-amber-300 bg-white/70 hover:bg-white text-amber-800 text-[11.5px] transition-colors"
+      >
+        放弃修改 · 返回发布页
+      </button>
+    </div>
+  );
+}
 
 function truncateTitle(s: string): string {
   const t = s.trim().replace(/^腾讯会议 ·\s*/, "");
@@ -513,11 +710,11 @@ function buildSingleAssetBlocks(
 }
 
 function buildAssetSummary(a: ImportAsset): string {
-  if (a.kind === "file") return `已基于文件「${a.name}」生成 Event 草稿。`;
-  if (a.kind === "link") return `已基于链接「${a.name}」抓取的正文生成 Event 草稿。`;
+  if (a.kind === "file") return `已基于文件「${a.name}」生成子主题草稿。`;
+  if (a.kind === "link") return `已基于链接「${a.name}」抓取的正文生成子主题草稿。`;
   if (a.kind === "meeting")
-    return `已基于「${a.name}」的 AI 纪要与录制转写生成 Event 草稿。`;
-  return `已基于粘贴文本生成 Event 草稿。`;
+    return `已基于「${a.name}」的 AI 纪要与录制转写生成子主题草稿。`;
+  return `已基于粘贴文本生成子主题草稿。`;
 }
 
 /** 单文件按章节拆 demo */
@@ -677,13 +874,13 @@ function buildMultiAssetDemoBlocks(list: ImportAsset[]): Block[] {
   blocks.push({
     id: uid(),
     type: "h2",
-    text: `AI 综合解析：${total} 份素材，已整合为以下 Event 草稿`,
+    text: `AI 综合解析：${total} 份素材，已整合为以下子主题草稿`,
   });
 
   blocks.push({
     id: uid(),
     type: "text",
-    text: `本 Event 由 AI 基于你勾选的 ${total} 份素材（涵盖${summarizeKinds(
+    text: `本子主题由 AI 基于你勾选的 ${total} 份素材（涵盖${summarizeKinds(
       list,
     )}）综合生成。AI 已自动抽取共性主题、合并重复信息、按时间和因果关系重排，并在结尾保留原始素材引用，便于读者溯源。`,
   });

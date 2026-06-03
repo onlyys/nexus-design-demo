@@ -118,7 +118,7 @@ export function ImportLauncherInline({ onAdd }: ImportLauncherInlineProps) {
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="text-[13px] font-semibold text-ink-900 leading-none">
-                AI 可导入业务内容，快速生成 Event
+                AI 可导入业务内容，快速生成子主题
               </span>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-ai-50 text-ai-700 border border-ai-100 leading-none">
                 AI
@@ -126,7 +126,7 @@ export function ImportLauncherInline({ onAdd }: ImportLauncherInlineProps) {
             </div>
             <div className="mt-1 text-[11.5px] text-ink-500 leading-none">
               {open
-                ? "拖拽或选择业务文档、链接、会议纪要等，AI 自动整理成 Event 草稿"
+                ? "拖拽或选择业务文档、链接、会议纪要等，AI 自动整理成子主题草稿"
                 : "需要 AI 帮忙整理已有素材？点开查看导入方式"}
             </div>
           </div>

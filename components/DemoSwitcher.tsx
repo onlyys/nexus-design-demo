@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { FileText, Sparkles, Send, FlaskConical } from "lucide-react";
+import { FileText, Sparkles, Send, FlaskConical, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -13,11 +13,12 @@ import { cn } from "@/lib/utils";
  * - 空白 demo v2（/v2）—— 新版一体化导入与解析
  * - 示例 demo（/）—— 已编辑示例（与 v2 共享导入模块）
  * - 发布后（/topic/demo）—— 发布态展示
+ * - Skills（/skills）—— 技能广场（重构 demo）
  */
 export function DemoSwitcher({
   current,
 }: {
-  current: "blank" | "v2" | "filled" | "published";
+  current: "blank" | "v2" | "filled" | "published" | "skills";
 }) {
   const items: {
     href: string;
@@ -32,10 +33,16 @@ export function DemoSwitcher({
       key: "v2",
       icon: FlaskConical,
       label: "空白 v2",
-      badge: "NEW",
     },
     { href: "/", key: "filled", icon: Sparkles, label: "示例 demo" },
     { href: "/topic/demo", key: "published", icon: Send, label: "发布后" },
+    {
+      href: "/skills",
+      key: "skills",
+      icon: Wrench,
+      label: "Skills",
+      badge: "NEW",
+    },
   ];
 
   return (

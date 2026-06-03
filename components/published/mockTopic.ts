@@ -1,7 +1,11 @@
 import { genAvatar, uid } from "@/lib/utils";
 import { buildEventBlocks } from "@/components/editor/factory";
 import { MOCK_USERS } from "@/lib/mock";
-import type { PublishedTopic, PublishedEvent } from "./types";
+import type {
+  PublishedTopic,
+  PublishedEvent,
+  InlineCommentThread,
+} from "./types";
 
 const EVENT_TITLES = [
   "CarbonX 碳中和实验室 · 图文进展",
@@ -24,6 +28,96 @@ const EVENT_AI_SUMMARIES = [
   "「西部少年 AI 课堂」首批覆盖 4 省 12 县，开设 86 个 AI 兴趣班；通过腾讯工程师 + 高校志愿者 + 当地教师的协作模式，建立长期可持续的乡村 AI 教育闭环。",
 ];
 
+/**
+ * 给 Event #1（CarbonX）造一些段落级评论 demo —— 关联到第 0 段 text 与第 1 段 bulletList
+ */
+function buildInlineCommentsForEvent0(
+  blocks: PublishedEvent["blocks"],
+): InlineCommentThread[] {
+  const result: InlineCommentThread[] = [];
+  const firstText = blocks[0];
+  if (firstText) {
+    result.push({
+      id: uid(),
+      blockId: firstText.id,
+      anchorText: "数字技术沉淀为可复用的碳工具箱",
+      comments: [
+        {
+          id: uid(),
+          authorId: "u1",
+          authorName: "roizhao",
+          authorTitle: "赵仁簃",
+          authorAvatar: genAvatar("赵仁簃"),
+          content:
+            "这个「工具箱」具体包含几个模块？是否能列出 v1 和 v2 的差异，方便对外讲清楚？",
+          time: "2026-05-12 20:11",
+        },
+        {
+          id: uid(),
+          authorId: "u2",
+          authorName: "weima",
+          authorTitle: "马巍",
+          authorAvatar: genAvatar("马巍"),
+          content: "+1，建议在文末附一个矩阵图。",
+          time: "2026-05-12 20:34",
+        },
+      ],
+    });
+  }
+  const bulletList = blocks[1];
+  if (bulletList) {
+    result.push({
+      id: uid(),
+      blockId: bulletList.id,
+      anchorText: "AI 节能调度：在试点工厂实现单位产值能耗下降 11.6%",
+      comments: [
+        {
+          id: uid(),
+          authorId: "u3",
+          authorName: "lily",
+          authorTitle: "王芳",
+          authorAvatar: genAvatar("王芳"),
+          content:
+            "11.6% 这个数字是按什么口径算的？是同比还是环比？建议加一句注解避免被外部误读。",
+          time: "2026-05-12 21:02",
+        },
+      ],
+      resolved: false,
+    });
+  }
+  return result;
+}
+
+/**
+ * Event #3（为村耕耘者）也造一条评论 demo
+ */
+function buildInlineCommentsForEvent2(
+  blocks: PublishedEvent["blocks"],
+): InlineCommentThread[] {
+  const result: InlineCommentThread[] = [];
+  const firstText = blocks[0];
+  if (firstText) {
+    result.push({
+      id: uid(),
+      blockId: firstText.id,
+      anchorText: "县域文旅小程序模板",
+      comments: [
+        {
+          id: uid(),
+          authorId: "u4",
+          authorName: "liuyang",
+          authorTitle: "刘洋",
+          authorAvatar: genAvatar("刘洋"),
+          content: "这块的可复制性如何？想了解模板的核心组件抽象。",
+          time: "2026-05-14 18:07",
+        },
+      ],
+      resolved: true, // demo: 已解决态
+    });
+  }
+  return result;
+}
+
 export const MOCK_TOPIC: PublishedTopic = {
   id: "demo",
   title: "SSV 2026 Q2 进展简报",
@@ -31,7 +125,8 @@ export const MOCK_TOPIC: PublishedTopic = {
   authorDept: "可持续社会价值事业部 / 技术架构部",
   authorRoleDeptId: "ssv-tech",
   publishedAt: "2026-05-12 19:19",
-  tags: ["关联关键策略", "战略", "项目"],
+  tags: ["战略", "项目"],
+  topicType: "department",
   visibility: ["edu", "welfare", "tech"],
   visibilityMode: "custom",
   keyStrategy: {
@@ -48,55 +143,63 @@ export const MOCK_TOPIC: PublishedTopic = {
     "对于微信与企微群人数据双向流动的技术路径",
     "梳理 Elsevier 等外部资源接入所需的 ADP 框架适配及权限审批",
   ],
-  events: EVENT_TITLES.map<PublishedEvent>((title, idx) => ({
-    id: `ev-${idx + 1}`,
-    index: idx + 1,
-    title,
-    blocks: buildEventBlocks(idx),
-    publishedAt: EVENT_TIMES[idx],
-    reactions: {
-      like: idx === 0 ? 12 : idx === 1 ? 6 : idx === 2 ? 18 : 4,
-      dislike: idx === 0 ? 0 : idx === 1 ? 1 : 0,
-      doubt: idx === 0 ? 2 : 1,
-    },
-    aiSummary: EVENT_AI_SUMMARIES[idx],
-    comments:
-      idx === 0
-        ? [
-            {
-              id: uid(),
-              authorId: "u1",
-              authorName: "roizhao",
-              authorTitle: "赵仁簃",
-              authorAvatar: genAvatar("赵仁簃"),
-              content:
-                "明白，这里大概有两方面的考虑：\n一是产品逻辑，它需要自然的嵌入到会议和讨论流程中（所以是机器人）\n二是要达到的效果，这块应该是需要深入讨论的，比如\n1、把 Connected Papers 等生产关系汇集到，是不是我们按照参会者背景结合被引数量等指标过滤掉得到 source paper，生成局部地图就行\n2、针对拆给例子会试用",
-              time: "2026-05-12 19:42",
-            },
-            {
-              id: uid(),
-              authorId: "u3",
-              authorName: "马巍",
-              authorTitle: "前端工程师",
-              authorAvatar: genAvatar("马巍"),
-              content:
-                "我们后续可以把 OpenAPI 优先对接到「为村开放联盟」的伙伴，这样能更快验证场景。",
-              time: "2026-05-12 21:05",
-            },
-          ]
-        : idx === 2
-        ? [
-            {
-              id: uid(),
-              authorId: "u4",
-              authorName: "刘洋",
-              authorTitle: "设计师",
-              authorAvatar: genAvatar("刘洋"),
-              content:
-                "县域文旅小程序模板的数据值得做一次专题复盘，3 天就能交付太亮眼了。",
-              time: "2026-05-14 17:32",
-            },
-          ]
-        : [],
-  })),
+  events: EVENT_TITLES.map<PublishedEvent>((title, idx) => {
+    const blocks = buildEventBlocks(idx);
+    let inlineComments: InlineCommentThread[] | undefined;
+    if (idx === 0) inlineComments = buildInlineCommentsForEvent0(blocks);
+    if (idx === 2) inlineComments = buildInlineCommentsForEvent2(blocks);
+
+    return {
+      id: `ev-${idx + 1}`,
+      index: idx + 1,
+      title,
+      blocks,
+      publishedAt: EVENT_TIMES[idx],
+      reactions: {
+        like: idx === 0 ? 12 : idx === 1 ? 6 : idx === 2 ? 18 : 4,
+        dislike: idx === 0 ? 0 : idx === 1 ? 1 : 0,
+        doubt: idx === 0 ? 2 : 1,
+      },
+      aiSummary: EVENT_AI_SUMMARIES[idx],
+      comments:
+        idx === 0
+          ? [
+              {
+                id: uid(),
+                authorId: "u1",
+                authorName: "roizhao",
+                authorTitle: "赵仁簃",
+                authorAvatar: genAvatar("赵仁簃"),
+                content:
+                  "明白，这里大概有两方面的考虑：\n一是产品逻辑，它需要自然的嵌入到会议和讨论流程中（所以是机器人）\n二是要达到的效果，这块应该是需要深入讨论的，比如\n1、把 Connected Papers 等生产关系汇集到，是不是我们按照参会者背景结合被引数量等指标过滤掉得到 source paper，生成局部地图就行\n2、针对拆给例子会试用",
+                time: "2026-05-12 19:42",
+              },
+              {
+                id: uid(),
+                authorId: "u3",
+                authorName: "马巍",
+                authorTitle: "前端工程师",
+                authorAvatar: genAvatar("马巍"),
+                content:
+                  "我们后续可以把 OpenAPI 优先对接到「为村开放联盟」的伙伴，这样能更快验证场景。",
+                time: "2026-05-12 21:05",
+              },
+            ]
+          : idx === 2
+          ? [
+              {
+                id: uid(),
+                authorId: "u4",
+                authorName: "刘洋",
+                authorTitle: "设计师",
+                authorAvatar: genAvatar("刘洋"),
+                content:
+                  "县域文旅小程序模板的数据值得做一次专题复盘，3 天就能交付太亮眼了。",
+                time: "2026-05-14 17:32",
+              },
+            ]
+          : [],
+      inlineComments,
+    };
+  }),
 };

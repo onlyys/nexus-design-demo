@@ -184,10 +184,10 @@ export function ImportPanel({ onParseAll }: ImportPanelProps) {
         {/* 副标题：解析说明 */}
         <div className="px-4 pt-3 pb-2">
           <h3 className="text-[13px] font-semibold text-ink-900 leading-tight">
-            导入已有内容，AI 帮你快速生成 Event 事件
+            导入已有内容，AI 帮你快速生成子主题
           </h3>
           <p className="mt-1 text-[11.5px] text-ink-500 leading-relaxed">
-            先把素材投递进来，再一键 AI 解析为 Event 草稿
+            先把素材投递进来，再一键 AI 解析为子主题草稿
           </p>
         </div>
 
@@ -471,18 +471,18 @@ export function ImportPanel({ onParseAll }: ImportPanelProps) {
             ) : done ? (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                解析完成，已生成 Event 草稿
+                解析完成，已生成子主题草稿
               </>
             ) : (
               <>
                 <Sparkles className="w-4 h-4" />
                 AI 一键解析{" "}
-                {assets.length > 0 && `（${assets.length}）`}，生成 Event 草稿
+                {assets.length > 0 && `（${assets.length}）`}，生成子主题草稿
               </>
             )}
           </button>
           <p className="mt-2 text-[10.5px] text-ink-400 text-center leading-relaxed">
-            解析完成后，每个素材会自动生成一个对应的 Event，可在左侧继续编辑
+            解析完成后，每个素材会自动生成一个对应的子主题，可在左侧继续编辑
           </p>
         </div>
       </div>

@@ -25,7 +25,7 @@ export function EventTimeline({
   return (
     <div className="relative">
       <div className="text-[12px] font-medium text-ink-500 mb-3 px-1">
-        Event 事件
+        子主题
       </div>
 
       <div className="space-y-2">
@@ -60,10 +60,10 @@ export function EventTimeline({
                       ? "text-ink-900 font-medium"
                       : "text-ink-700",
                   )}
-                  title={ev.title || `未命名事件 ${idx + 1}`}
+                  title={ev.title || `未命名子主题 ${idx + 1}`}
                 >
                   {ev.title || (
-                    <span className="text-ink-400">未命名事件</span>
+                    <span className="text-ink-400">未命名子主题</span>
                   )}
                 </span>
               </div>
@@ -77,7 +77,7 @@ export function EventTimeline({
         className="mt-3 w-full inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-dashed border-ink-300 text-[12.5px] text-ink-600 hover:text-brand-600 hover:border-brand-400 hover:bg-brand-50/40 transition-colors"
       >
         <Plus className="w-3.5 h-3.5" />
-        添加事件
+        添加子主题
       </button>
     </div>
   );

@@ -45,6 +45,7 @@ export function createBlock(
           size: 4.6 * 1024 * 1024,
           fileType: "pdf",
           pdfPreview: true,
+          pdfDisplayMode: "preview",
         };
       }
       if (meta?.fileType === "doc") {

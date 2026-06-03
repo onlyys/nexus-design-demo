@@ -9,16 +9,31 @@ import {
   Image as ImageIcon,
   ImageOff,
   ExternalLink,
-  Download,
-  Maximize2,
-  ChevronLeft,
-  ChevronRight,
   Globe,
   Search,
   Check,
 } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
+import { AttachmentHoverWrapper } from "@/components/blocks/AttachmentHoverWrapper";
+import {
+  UnifiedAttachmentPreview,
+  PdfMockPage,
+  DocMockPage,
+  PptMockSlide,
+} from "@/components/blocks/UnifiedAttachmentPreview";
 import type { Block } from "@/components/editor/types";
+
+/** 复制文本到剪贴板（demo 占位实现，失败静默） */
+function copyToClipboard(text: string) {
+  if (typeof navigator !== "undefined" && navigator.clipboard) {
+    navigator.clipboard.writeText(text).catch(() => {});
+  }
+}
+
+/** 给附件类 block 生成一条用于复制 / 分享的伪链接 */
+function fileShareUrl(id: string, name: string) {
+  return `https://nexus.demo/files/${id}/${encodeURIComponent(name)}`;
+}
 
 /** 渲染粘贴解析后的富文本字符串：可能含 inline HTML（加粗/颜色/链接等） */
 function RichText({
@@ -182,58 +197,10 @@ export function ReadOnlyBlock({ block }: { block: Block }) {
           )}
         </figure>
       );
-    case "file": {
-      const { Icon, color, bg } = fileIcon(block.fileType);
-      return (
-        <div className="my-1.5 flex items-center gap-3 px-3.5 py-3 rounded-xl border border-ink-200 bg-white hover:border-ink-300 hover:shadow-card transition-all cursor-pointer">
-          <div
-            className={cn(
-              "h-10 w-10 rounded-lg flex items-center justify-center",
-              bg,
-            )}
-          >
-            <Icon className={cn("w-5 h-5", color)} strokeWidth={2} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[14px] font-medium text-ink-900 truncate">
-              {block.name}
-            </div>
-            <div className="text-[12px] text-ink-500 mt-0.5">
-              {formatBytes(block.size)}
-            </div>
-          </div>
-          <Download className="w-4 h-4 text-ink-400 shrink-0" />
-        </div>
-      );
-    }
+    case "file":
+      return <FileReadOnly block={block} />;
     case "link":
-      return (
-        <a
-          href={block.url}
-          target="_blank"
-          rel="noreferrer"
-          className="my-1.5 block px-4 py-3 rounded-xl border border-ink-200 bg-white hover:border-ink-300 hover:shadow-card transition-all"
-        >
-          <div className="flex items-start gap-2.5">
-            <div className="mt-0.5 h-5 w-5 rounded-md bg-brand-50 flex items-center justify-center shrink-0">
-              <ExternalLink className="w-3 h-3 text-brand-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[14px] font-medium text-ink-900">
-                {block.title}
-              </div>
-              <div className="text-[12.5px] text-brand-600 break-all">
-                {block.url}
-              </div>
-              {block.desc && (
-                <div className="text-[12px] text-ink-500 mt-1">
-                  {block.desc}
-                </div>
-              )}
-            </div>
-          </div>
-        </a>
-      );
+      return <LinkReadOnly block={block} />;
     case "todo":
       return (
         <ul className="space-y-1.5 py-1">
@@ -308,161 +275,9 @@ export function ReadOnlyBlock({ block }: { block: Block }) {
         </pre>
       );
     case "pptPreview":
-      return (
-        <div className="my-2.5 rounded-xl overflow-hidden border border-ink-200 bg-[#0e1116] shadow-card">
-          <div className="flex items-center justify-between px-3 py-2 bg-[#181d24] text-ink-300">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="flex flex-col gap-[2px]">
-                <span className="block w-3.5 h-[2px] bg-ink-400" />
-                <span className="block w-3.5 h-[2px] bg-ink-400" />
-                <span className="block w-3.5 h-[2px] bg-ink-400" />
-              </div>
-              <span className="text-[12px] font-mono text-ink-300 truncate">
-                {block.name}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-[11.5px] text-ink-400">
-              <span>
-                {block.currentSlide} / {block.totalSlides}
-              </span>
-              <span className="h-6 w-6 rounded-md inline-flex items-center justify-center hover:bg-white/5">
-                <Download className="w-3.5 h-3.5" />
-              </span>
-              <span className="h-6 w-6 rounded-md inline-flex items-center justify-center hover:bg-white/5">
-                <Maximize2 className="w-3.5 h-3.5" />
-              </span>
-            </div>
-          </div>
-          <div className="flex bg-[#0e1116]">
-            <div className="w-[120px] shrink-0 border-r border-white/10 py-3 px-2 flex flex-col gap-2">
-              {block.thumbnails.map((t, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "rounded-md overflow-hidden border",
-                    i === 0
-                      ? "border-brand-400 ring-2 ring-brand-400/40"
-                      : "border-white/10",
-                  )}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={t}
-                    alt=""
-                    className="block w-full h-[60px] object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="flex-1 min-w-0 p-6 flex flex-col items-center justify-center text-white relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={block.mainSlide}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover opacity-30"
-              />
-              <div className="relative z-10 text-center">
-                <div className="text-[22px] font-bold tracking-tight">
-                  {block.title}
-                </div>
-                {block.subtitle && (
-                  <div className="mt-1.5 text-[13px] text-ink-300">
-                    {block.subtitle}
-                  </div>
-                )}
-                {block.date && (
-                  <div className="mt-4 text-[11.5px] text-ink-400">
-                    {block.date}
-                  </div>
-                )}
-              </div>
-              <button className="absolute left-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center">
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    case "htmlPreview": {
-      // 与编辑态保持一致：plain / card / full 三种形态
-      const mode = block.mode ?? "card";
-      if (mode === "full") {
-        return <HtmlFullView block={block} />;
-      }
-      if (mode === "plain") {
-        return (
-          <a
-            href={block.url}
-            target="_blank"
-            rel="noreferrer"
-            className="my-1.5 block px-4 py-3 rounded-xl border border-ink-200 bg-white hover:border-ink-300 hover:shadow-card transition-all"
-          >
-            <div className="flex items-start gap-2.5">
-              <div className="mt-0.5 h-5 w-5 rounded-md bg-brand-50 flex items-center justify-center shrink-0">
-                <ExternalLink className="w-3 h-3 text-brand-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-medium text-ink-900 truncate">
-                  {block.siteName}：{block.pageTitle}
-                </div>
-                <div className="text-[12.5px] text-brand-600 hover:underline break-all">
-                  {block.url}
-                </div>
-              </div>
-            </div>
-          </a>
-        );
-      }
-      return (
-        <a
-          href={block.url}
-          target="_blank"
-          rel="noreferrer"
-          className="my-2.5 block rounded-xl overflow-hidden border bg-white shadow-card hover:shadow-cardHover transition-shadow border-ink-200"
-        >
-          <div className="flex items-center gap-2 px-3.5 py-2 border-b border-ink-100 bg-ink-50/60">
-            <div className="h-5 w-5 rounded-md bg-gradient-to-br from-ink-700 to-ink-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-              {block.faviconText || "·"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[12px] font-medium text-ink-800 truncate">
-                {block.siteName}：{block.pageTitle}
-              </div>
-              <div className="text-[11px] text-brand-600 truncate flex items-center gap-1">
-                <Globe className="w-3 h-3 shrink-0" />
-                {block.url}
-              </div>
-            </div>
-            <ExternalLink className="w-3.5 h-3.5 text-ink-400 shrink-0" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-4 px-5 py-4">
-            <div>
-              <div className="text-[16px] font-bold leading-tight text-ink-900">
-                {block.pageTitle}
-              </div>
-              {block.description && (
-                <div className="mt-2 text-[12.5px] text-ink-600 leading-relaxed line-clamp-3">
-                  {block.description}
-                </div>
-              )}
-            </div>
-            {block.cover && (
-              <div className="rounded-lg overflow-hidden border border-ink-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={block.cover}
-                  alt=""
-                  className="block w-full h-[110px] object-cover"
-                />
-              </div>
-            )}
-          </div>
-        </a>
-      );
-    }
+      return <PptPreviewReadOnly block={block} />;
+    case "htmlPreview":
+      return <HtmlPreviewReadOnly block={block} />;
   }
 }
 
@@ -871,5 +686,350 @@ function TimelineItem({
       </div>
       <div className="text-[12px] text-ink-500 mt-0.5">{desc}</div>
     </li>
+  );
+}
+
+/* ============================================================
+ * 附件类 block 的只读子组件 ——
+ * 都用 AttachmentHoverWrapper 提供 hover 时的下载 / 切换视图
+ * （切换状态保留在本地 state，不持久化）
+ * ============================================================ */
+
+type FileBlockType = Extract<Block, { type: "file" }>;
+type LinkBlockType = Extract<Block, { type: "link" }>;
+type PptPreviewBlockType = Extract<Block, { type: "pptPreview" }>;
+type HtmlPreviewBlockType = Extract<Block, { type: "htmlPreview" }>;
+
+function FileReadOnly({ block }: { block: FileBlockType }) {
+  const isPdf = block.fileType === "pdf";
+  const isDoc = block.fileType === "doc";
+  // 初始化模式：兼容旧 pdfDisplayMode + 新 displayMode
+  const initial: "card" | "preview" =
+    block.displayMode ??
+    (block.pdfDisplayMode === "preview" ? "preview" : "card");
+  const [mode, setMode] = React.useState<"card" | "preview">(initial);
+
+  const supportsPreview = isPdf || isDoc;
+  const { Icon, color, bg } = fileIcon(block.fileType);
+
+  if (isPdf && mode === "preview") {
+    return (
+      <AttachmentHoverWrapper
+        mode={mode}
+        onChangeMode={setMode}
+        supportsPreview={supportsPreview}
+        onDownload={() => {}}
+        onCopyLink={() =>
+          copyToClipboard(fileShareUrl(block.id, block.name))
+        }
+        readOnly
+      >
+        <UnifiedAttachmentPreview
+          fileType="pdf"
+          name={block.name}
+          size={block.size}
+          currentPage={1}
+          totalPages={28}
+        >
+          <PdfMockPage />
+        </UnifiedAttachmentPreview>
+      </AttachmentHoverWrapper>
+    );
+  }
+
+  if (isDoc && mode === "preview") {
+    return (
+      <AttachmentHoverWrapper
+        mode={mode}
+        onChangeMode={setMode}
+        supportsPreview={supportsPreview}
+        onDownload={() => {}}
+        onCopyLink={() =>
+          copyToClipboard(fileShareUrl(block.id, block.name))
+        }
+        readOnly
+      >
+        <UnifiedAttachmentPreview
+          fileType="doc"
+          name={block.name}
+          size={block.size}
+          currentPage={1}
+          totalPages={12}
+        >
+          <DocMockPage />
+        </UnifiedAttachmentPreview>
+      </AttachmentHoverWrapper>
+    );
+  }
+
+  return (
+    <AttachmentHoverWrapper
+      mode={mode}
+      onChangeMode={supportsPreview ? setMode : undefined}
+      supportsPreview={supportsPreview}
+      onDownload={() => {}}
+      onCopyLink={() => copyToClipboard(fileShareUrl(block.id, block.name))}
+      readOnly
+    >
+      <div className="my-1.5 flex items-center gap-3 px-3.5 py-3 pr-12 rounded-xl border border-ink-200 bg-white hover:border-ink-300 hover:shadow-card transition-all cursor-pointer">
+        <div
+          className={cn(
+            "h-10 w-10 rounded-lg flex items-center justify-center",
+            bg,
+          )}
+        >
+          <Icon className={cn("w-5 h-5", color)} strokeWidth={2} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[14px] font-medium text-ink-900 truncate">
+            {block.name}
+          </div>
+          <div className="text-[12px] text-ink-500 mt-0.5">
+            {formatBytes(block.size)}
+          </div>
+        </div>
+      </div>
+    </AttachmentHoverWrapper>
+  );
+}
+
+function LinkReadOnly({ block }: { block: LinkBlockType }) {
+  const initial: "card" | "preview" =
+    block.displayMode ?? (block.display === "full" ? "preview" : "card");
+  const [mode, setMode] = React.useState<"card" | "preview">(initial);
+
+  if (mode === "card") {
+    return (
+      <AttachmentHoverWrapper
+        mode={mode}
+        onChangeMode={setMode}
+        supportsPreview
+        onCopyLink={() => copyToClipboard(block.url)}
+        readOnly
+      >
+        <div className="my-2 rounded-xl overflow-hidden border border-ink-200 bg-white shadow-card">
+          <div className="flex items-center gap-2 px-3.5 py-2 border-b border-ink-100 bg-ink-50/60 pr-12">
+            <div className="h-5 w-5 rounded-md bg-gradient-to-br from-ink-700 to-ink-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+              {block.faviconText || block.title.slice(0, 1).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[12px] font-medium text-ink-800 truncate">
+                {block.siteName || block.title}
+              </div>
+              <div className="text-[11px] text-brand-600 truncate">
+                {block.url}
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-4 px-4 py-4 bg-white">
+            <div className="min-w-0">
+              <div className="text-[15px] font-bold leading-snug text-ink-900">
+                {block.title}
+              </div>
+              {block.desc && (
+                <div className="mt-1.5 text-[12.5px] text-ink-600 leading-relaxed line-clamp-3">
+                  {block.desc}
+                </div>
+              )}
+              <a
+                href={block.url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-medium text-brand-600 hover:underline"
+              >
+                在浏览器中查看原文
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+            {block.cover && (
+              <div className="rounded-lg overflow-hidden border border-ink-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={block.cover}
+                  alt=""
+                  className="block w-full h-[100px] object-cover"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </AttachmentHoverWrapper>
+    );
+  }
+
+  // preview 模式：内嵌网页大卡
+  return (
+    <AttachmentHoverWrapper
+      mode={mode}
+      onChangeMode={setMode}
+      supportsPreview
+      onCopyLink={() => copyToClipboard(block.url)}
+      readOnly
+    >
+      <div className="my-2 rounded-xl overflow-hidden border border-brand-200 bg-white shadow-card">
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-ink-100 bg-ink-50/80 pr-12">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-400/80" />
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
+          </div>
+          <div className="flex-1 mx-2 h-6 px-2.5 rounded-md bg-white border border-ink-200 flex items-center text-[11.5px] text-ink-500 truncate">
+            <Globe className="w-3 h-3 mr-1.5 text-ink-400 shrink-0" />
+            {block.url}
+          </div>
+        </div>
+        {block.cover && (
+          <div className="relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={block.cover}
+              alt=""
+              className="block w-full h-[260px] object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            <div className="absolute bottom-5 left-6 right-6 text-white">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/15 backdrop-blur-sm text-[11px] font-medium">
+                {block.siteName || "外部网页"}
+              </div>
+              <h1 className="mt-3 text-[24px] font-bold leading-tight tracking-tight max-w-[680px]">
+                {block.title}
+              </h1>
+            </div>
+          </div>
+        )}
+        <div className="px-6 py-5">
+          {block.desc && (
+            <p className="text-[14.5px] leading-[1.85] text-ink-800">
+              {block.desc}
+            </p>
+          )}
+          <a
+            href={block.url}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-flex items-center gap-1 text-[12.5px] font-medium text-brand-600 hover:underline"
+          >
+            查看完整原文
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+      </div>
+    </AttachmentHoverWrapper>
+  );
+}
+
+function PptPreviewReadOnly({ block }: { block: PptPreviewBlockType }) {
+  const initial: "card" | "preview" = block.displayMode ?? "preview";
+  const [mode, setMode] = React.useState<"card" | "preview">(initial);
+
+  // card 模式：紧凑的 PPT 文件卡（与 file ppt 一致）
+  if (mode === "card") {
+    return (
+      <AttachmentHoverWrapper
+        mode={mode}
+        onChangeMode={setMode}
+        supportsPreview
+        onDownload={() => {}}
+        onCopyLink={() => copyToClipboard(fileShareUrl(block.id, block.name))}
+        readOnly
+      >
+        <div className="my-1.5 flex items-center gap-3 px-3.5 py-3 pr-12 rounded-xl border border-ink-200 bg-white hover:border-ink-300 hover:shadow-card transition-all cursor-pointer">
+          <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-orange-50">
+            <Presentation className="w-5 h-5 text-orange-500" strokeWidth={2} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[14px] font-medium text-ink-900 truncate">
+              {block.name}
+            </div>
+            <div className="text-[12px] text-ink-500 mt-0.5">
+              共 {block.totalSlides} 张幻灯片
+            </div>
+          </div>
+        </div>
+      </AttachmentHoverWrapper>
+    );
+  }
+
+  return (
+    <AttachmentHoverWrapper
+      mode={mode}
+      onChangeMode={setMode}
+      supportsPreview
+      onDownload={() => {}}
+      onCopyLink={() => copyToClipboard(fileShareUrl(block.id, block.name))}
+      readOnly
+    >
+      <UnifiedAttachmentPreview
+        fileType="ppt"
+        name={block.name}
+        currentPage={block.currentSlide}
+        totalPages={block.totalSlides}
+        pageUnit="张"
+      >
+        <PptMockSlide
+          image={block.mainSlide}
+          title={block.title}
+          subtitle={block.subtitle}
+          date={block.date}
+        />
+      </UnifiedAttachmentPreview>
+    </AttachmentHoverWrapper>
+  );
+}
+
+function HtmlPreviewReadOnly({ block }: { block: HtmlPreviewBlockType }) {
+  const initial: "card" | "preview" =
+    block.displayMode ?? (block.mode === "full" ? "preview" : "card");
+  const [mode, setMode] = React.useState<"card" | "preview">(initial);
+
+  if (mode === "preview") {
+    return (
+      <AttachmentHoverWrapper
+        mode={mode}
+        onChangeMode={setMode}
+        supportsPreview
+        onCopyLink={() => copyToClipboard(block.url)}
+        readOnly
+      >
+        <HtmlFullView block={block} />
+      </AttachmentHoverWrapper>
+    );
+  }
+
+  // card 模式：紧凑缩略卡（标题 + URL + 缩略图，不展示页面内容）
+  return (
+    <AttachmentHoverWrapper
+      mode={mode}
+      onChangeMode={setMode}
+      supportsPreview
+      onCopyLink={() => copyToClipboard(block.url)}
+      readOnly
+    >
+      <div className="my-1.5 flex items-center gap-3 px-3.5 py-3 pr-12 rounded-xl border border-ink-200 bg-white hover:border-ink-300 hover:shadow-card transition-all cursor-pointer">
+        <div className="h-12 w-12 rounded-md overflow-hidden border border-ink-100 shrink-0 bg-ink-50">
+          {block.cover ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={block.cover}
+              alt=""
+              className="block w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-ink-700 to-ink-900 text-white text-[14px] font-bold flex items-center justify-center">
+              {block.faviconText || "·"}
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[14px] font-medium text-ink-900 truncate">
+            {block.pageTitle}
+          </div>
+          <div className="text-[12px] text-ink-500 mt-0.5 truncate flex items-center gap-1">
+            <Globe className="w-3 h-3 shrink-0 text-ink-400" />
+            {block.url}
+          </div>
+        </div>
+      </div>
+    </AttachmentHoverWrapper>
   );
 }

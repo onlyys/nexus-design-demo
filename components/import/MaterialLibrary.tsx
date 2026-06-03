@@ -240,18 +240,18 @@ export function MaterialLibrary({
           ) : done ? (
             <>
               <CheckCircle2 className="w-4 h-4" />
-              解析完成，已生成 Event 草稿
+              解析完成，已生成子主题草稿
             </>
           ) : (
             <>
               <Sparkles className="w-4 h-4" />
-              AI 一键解析，生成 Event 草稿
+              AI 一键解析，生成子主题草稿
             </>
           )}
         </button>
 
         <p className="mt-2 text-[10.5px] text-ink-400 text-center leading-relaxed">
-          解析完成后，内容将自动填充到 Event 编辑器中
+          解析完成后，内容将自动填充到子主题编辑器中
           <br />
           可在编辑器中继续修改和完善
         </p>

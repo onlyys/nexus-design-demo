@@ -588,12 +588,12 @@ export function CreateTopicView({
                 onClick={addEvent}
                 className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-md border border-dashed border-ink-300 bg-white text-[13px] text-ink-600 hover:text-brand-600 hover:border-brand-400 hover:bg-brand-50/40 transition-colors"
               >
-                + 增加事件 Event
+                + 增加子主题
               </button>
             </div>
 
             <footer className="mt-2 mb-4 flex items-center justify-between text-[11.5px] text-ink-400">
-              <span>共 {events.length} 个 Event</span>
+              <span>共 {events.length} 个子主题</span>
               <span>共 {wordCount} 个字</span>
             </footer>
           </div>
@@ -627,7 +627,7 @@ function EditPublishedBanner({ onBack }: { onBack: () => void }) {
           ✎
         </span>
         <span className="truncate">
-          正在编辑已发布的 Topic — 保存后将<strong className="font-semibold">直接覆盖发布版本</strong>，订阅者可见。
+          正在编辑已发布的主题 — 保存后将<strong className="font-semibold">直接覆盖发布版本</strong>，订阅者可见。
         </span>
       </span>
       <button
@@ -686,14 +686,14 @@ function buildMultiAssetDemoBlocks(list: ImportAsset[]): Block[] {
   blocks.push({
     id: uid(),
     type: "h2",
-    text: `AI 综合解析：${total} 份素材，已整合为以下 Event 草稿`,
+    text: `AI 综合解析：${total} 份素材，已整合为以下子主题草稿`,
   });
 
   // 2. 提要段落
   blocks.push({
     id: uid(),
     type: "text",
-    text: `本 Event 由 AI 基于你勾选的 ${total} 份素材（涵盖${summarizeKinds(
+    text: `本子主题由 AI 基于你勾选的 ${total} 份素材（涵盖${summarizeKinds(
       list,
     )}）综合生成。AI 已自动抽取共性主题、合并重复信息、按时间和因果关系重排，并在结尾保留原始素材引用，便于读者溯源。`,
   });

@@ -70,18 +70,12 @@ export function AuthorsField({ value, onChange, max = 5 }: AuthorsFieldProps) {
               exit={{ opacity: 0, scale: 0.92 }}
               transition={{ duration: 0.16 }}
               className={cn(
-                "group inline-flex items-center gap-1.5 pl-1 pr-1.5 py-0.5 rounded-full border transition-colors",
+                "group inline-flex items-center gap-1 px-2 py-0.5 rounded-full border transition-colors",
                 isFirst
                   ? "border-brand-200 bg-brand-50/50"
                   : "border-ink-200 bg-white hover:border-ink-300",
               )}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={u.avatar}
-                alt={u.name}
-                className="w-5 h-5 rounded-full object-cover ring-1 ring-ink-200"
-              />
               <span className="text-[12.5px] text-ink-900 font-medium leading-none">
                 {u.name}
               </span>

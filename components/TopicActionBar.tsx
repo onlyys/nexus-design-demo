@@ -98,7 +98,7 @@ export function TopicActionBar({
           </Button>
           <Button variant="primary" size="sm" onClick={onPublish}>
             <Send className="w-3.5 h-3.5" />
-            发布 Topic
+            发布主题
           </Button>
         </>
       )}

@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ReadOnlyBlock } from "./ReadOnlyBlock";
+import { InlineCommentable } from "./InlineCommentable";
 import { ReactionBar } from "./ReactionBar";
 import { CommentSection } from "./CommentSection";
 import { EventCard } from "@/components/event/EventCard";
@@ -151,7 +151,7 @@ export function PublishedEventCard({
 
               <div className="space-y-2.5">
                 {event.blocks.map((b) => (
-                  <ReadOnlyBlock key={b.id} block={b} />
+                  <InlineCommentable key={b.id} eventId={event.id} block={b} />
                 ))}
               </div>
 

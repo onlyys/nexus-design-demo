@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Target, FileText } from "lucide-react";
 
 export type TopicType = "normal" | "department";
 
@@ -28,29 +27,27 @@ export function TopicTypeField({ value, onChange }: TopicTypeFieldProps) {
     onChange?.(t);
   };
 
-  const options: { key: TopicType; label: string; desc: string; icon: React.ReactNode }[] = [
-    {
-      key: "normal",
-      label: "普通 Topic",
-      desc: "常规发布，无需关联部门事项",
-      icon: <FileText className="w-4 h-4" />,
-    },
+  const options: { key: TopicType; label: string; desc: string }[] = [
     {
       key: "department",
-      label: "关联部门事项 Topic",
-      desc: "关联具体部门的关键策略，对齐组织目标",
-      icon: <Target className="w-4 h-4" />,
+      label: "关联部门事项主题",
+      desc: "对齐组织目标",
+    },
+    {
+      key: "normal",
+      label: "普通主题",
+      desc: "常规发布",
     },
   ];
 
   return (
     <div>
-      <div className="flex items-baseline gap-2 mb-2.5">
-        <span className="text-[13.5px] font-semibold text-ink-900">Topic 类型</span>
+      <div className="flex items-baseline gap-2 mb-2">
+        <span className="text-[13.5px] font-semibold text-ink-900">主题类型</span>
         <span className="text-[12px] text-ink-400">选择发布性质</span>
       </div>
 
-      <div className="flex gap-2.5">
+      <div className="flex items-center gap-2 flex-wrap">
         {options.map((opt) => {
           const active = selected === opt.key;
           return (
@@ -58,35 +55,21 @@ export function TopicTypeField({ value, onChange }: TopicTypeFieldProps) {
               key={opt.key}
               onClick={() => update(opt.key)}
               className={cn(
-                "flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg border text-left transition-all",
+                "inline-flex items-center gap-1.5 h-8 px-3 rounded-md border text-[12.5px] transition-all whitespace-nowrap",
                 active
-                  ? "border-brand-300 bg-brand-50/70 shadow-sm ring-1 ring-brand-200"
-                  : "border-ink-200 bg-white hover:bg-ink-50 hover:border-ink-300",
+                  ? "border-brand-300 bg-brand-50 text-brand-700 ring-1 ring-brand-200 font-medium"
+                  : "border-ink-200 bg-white text-ink-700 hover:bg-ink-50 hover:border-ink-300",
               )}
             >
+              <span>{opt.label}</span>
               <span
                 className={cn(
-                  "shrink-0 mt-0.5 flex items-center justify-center w-8 h-8 rounded-md border transition-colors",
-                  active
-                    ? "border-brand-300 bg-brand-100 text-brand-700"
-                    : "border-ink-200 bg-ink-50 text-ink-500",
+                  "text-[11px]",
+                  active ? "text-brand-500" : "text-ink-400",
                 )}
               >
-                {opt.icon}
+                · {opt.desc}
               </span>
-              <div>
-                <div
-                  className={cn(
-                    "text-[13px] font-medium leading-tight",
-                    active ? "text-brand-800" : "text-ink-900",
-                  )}
-                >
-                  {opt.label}
-                </div>
-                <div className="text-[11.5px] text-ink-400 leading-snug mt-0.5 max-w-[180px]">
-                  {opt.desc}
-                </div>
-              </div>
             </button>
           );
         })}

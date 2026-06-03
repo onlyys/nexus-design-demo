@@ -62,7 +62,7 @@ export function EventCard({
           value={event.title}
           onChange={(e) => onChange({ ...event, title: e.target.value })}
           onFocus={onActivate}
-          placeholder={`Event ${index} 标题（可选）`}
+          placeholder={`子主题 ${index} 标题（可选）`}
           className="flex-1 min-w-0 text-[18px] font-semibold text-ink-900 bg-transparent border-0 outline-none placeholder:text-ink-300"
         />
         <div className="flex items-center gap-1 shrink-0">
@@ -83,7 +83,7 @@ export function EventCard({
             <button
               onClick={onDelete}
               className="h-7 w-7 rounded-md inline-flex items-center justify-center text-ink-400 hover:text-rose-600 hover:bg-rose-50"
-              title="删除此事件"
+              title="删除此子主题"
             >
               <Trash2 className="w-4 h-4" />
             </button>

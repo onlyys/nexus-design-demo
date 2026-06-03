@@ -75,7 +75,7 @@ export function AiInsightPanel({ topic, activeEventId }: AiInsightPanelProps) {
             <div className="mt-2 flex items-center gap-3 text-[11.5px] text-ink-500">
               <span className="inline-flex items-center gap-1">
                 <FileText className="w-3 h-3" />
-                {eventCount} 事件
+                {eventCount} 子主题
               </span>
               <span className="inline-flex items-center gap-1">
                 <MessageCircle className="w-3 h-3" />
@@ -91,7 +91,7 @@ export function AiInsightPanel({ topic, activeEventId }: AiInsightPanelProps) {
           {/* Topic 概览 标签 */}
           <SectionLabel
             icon={<Sparkles className="w-3 h-3" />}
-            text="Topic 概览"
+            text="主题概览"
             tone="ai"
           />
 

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, Check, Briefcase } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { USER_DEPARTMENTS } from "@/lib/mock";
 import { FloatingMenu } from "@/components/ui/FloatingMenu";
@@ -59,10 +59,7 @@ export function AuthorRoleField({
             : "border-ink-200 hover:border-ink-300",
         )}
       >
-        <span className="inline-flex items-center gap-2 min-w-0">
-          <span className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-md bg-brand-50 text-brand-600">
-            <Briefcase className="w-3.5 h-3.5" />
-          </span>
+        <span className="inline-flex items-center min-w-0">
           <span className="truncate text-[12.5px] text-ink-800">
             {current.path}
           </span>

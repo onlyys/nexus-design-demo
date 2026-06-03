@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   List,
   User2,
@@ -16,6 +17,7 @@ interface SidebarItem {
   key: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  href?: string;
 }
 
 interface SidebarGroup {
@@ -27,14 +29,14 @@ const GROUPS: SidebarGroup[] = [
   {
     label: "TOPICS",
     items: [
-      { key: "all", label: "ALL", icon: List },
-      { key: "my", label: "MY", icon: User2 },
+      { key: "all", label: "全部", icon: List, href: "/topic/demo" },
+      { key: "my", label: "我的", icon: User2 },
     ],
   },
   {
     label: "TOOLS",
     items: [
-      { key: "skills", label: "技能", icon: Wrench },
+      { key: "skills", label: "技能", icon: Wrench, href: "/skills" },
       { key: "plugins", label: "插件", icon: Puzzle },
     ],
   },
@@ -51,7 +53,7 @@ const GROUPS: SidebarGroup[] = [
 /**
  * 左侧极简侧导航（参照 Nexus 1.0）
  * - Topics / Tools / Admin 三个分组
- * - 当前 active：MY（发布页所属）
+ * - 支持 href 跳转：技能 → /skills，全部 → /topic/demo
  */
 export function Sidebar({ active = "my" }: { active?: string }) {
   return (
@@ -66,19 +68,27 @@ export function Sidebar({ active = "my" }: { active?: string }) {
               {g.items.map((it) => {
                 const isActive = it.key === active;
                 const Icon = it.icon;
+                const className = cn(
+                  "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-colors",
+                  isActive
+                    ? "bg-ink-900 text-white"
+                    : "text-ink-700 hover:bg-ink-100",
+                );
+                const inner = (
+                  <>
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    {it.label}
+                  </>
+                );
                 return (
                   <li key={it.key}>
-                    <button
-                      className={cn(
-                        "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-colors",
-                        isActive
-                          ? "bg-ink-900 text-white"
-                          : "text-ink-700 hover:bg-ink-100",
-                      )}
-                    >
-                      <Icon className="w-3.5 h-3.5 shrink-0" />
-                      {it.label}
-                    </button>
+                    {it.href ? (
+                      <Link href={it.href} className={className}>
+                        {inner}
+                      </Link>
+                    ) : (
+                      <button className={className}>{inner}</button>
+                    )}
                   </li>
                 );
               })}

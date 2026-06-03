@@ -105,6 +105,25 @@
     animation: eventFlash 0.9s ease-out;
   }
 
+  /* 段落级评论：点击锚点后段落 / thread 卡闪烁高亮 */
+  @keyframes inlineCommentFlash {
+    0% {
+      background-color: rgba(251, 191, 36, 0);
+      box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+    }
+    35% {
+      background-color: rgba(251, 191, 36, 0.22);
+      box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.22);
+    }
+    100% {
+      background-color: rgba(251, 191, 36, 0);
+      box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+    }
+  }
+  .inline-comment-flash {
+    animation: inlineCommentFlash 1.2s ease-out;
+  }
+
   /* 正文 @ 提及 chip */
   .mention-chip {
     display: inline-flex;

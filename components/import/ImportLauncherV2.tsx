@@ -27,10 +27,7 @@ import {
   FileCode,
   Loader2,
   CheckCircle2,
-  Layers,
-  Files,
   PackageOpen,
-  Wand2,
 } from "lucide-react";
 import { cn, formatBytes, uid } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -166,8 +163,6 @@ export function ImportLauncherV2({
 
   // 单/多素材模式
   const selectedCount = selectedIds.length;
-  const singleSelected = selectedCount === 1;
-  const multiSelected = selectedCount >= 2;
 
   return (
     <section
@@ -194,7 +189,7 @@ export function ImportLauncherV2({
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="text-[13px] font-semibold text-ink-900 leading-none">
-                AI 可导入业务内容，快速生成 Event
+                AI 可导入业务内容，快速生成子主题
               </span>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-ai-50 text-ai-700 border border-ai-100 leading-none">
                 AI
@@ -406,8 +401,15 @@ export function ImportLauncherV2({
             </div>
           )}
 
-          {/* === C. 已导入素材列表（内嵌） === */}
-          <div className="rounded-lg border border-ink-200 bg-gradient-to-b from-ink-50/40 to-white overflow-hidden">
+          {/* === C. 已导入素材列表（内嵌 + 底部 AI 解析 CTA） === */}
+          <div
+            className={cn(
+              "rounded-lg border overflow-hidden transition-all",
+              assets.length > 0 && selectedCount > 0
+                ? "border-ai-300 ring-2 ring-ai-100/60 shadow-[0_4px_18px_-6px_rgba(139,92,246,0.22)] bg-white"
+                : "border-ink-200 bg-gradient-to-b from-ink-50/40 to-white",
+            )}
+          >
             <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-ink-100 bg-white/60">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-md bg-brand-50 text-brand-600 inline-flex items-center justify-center">
@@ -453,127 +455,83 @@ export function ImportLauncherV2({
                 </div>
               </div>
             ) : (
-              <ul className="px-2 py-2 space-y-1.5 max-h-[300px] overflow-y-auto">
-                {assets.map((a) => (
-                  <AssetRow
-                    key={a.id}
-                    asset={a}
-                    checked={selectedIds.includes(a.id)}
-                    onToggle={() => toggleSelect(a.id)}
-                    onRename={(n) => renameAsset(a.id, n)}
-                    onRemove={() => removeAsset(a.id)}
-                  />
-                ))}
-              </ul>
-            )}
-          </div>
+              <>
+                <ul className="px-2 py-2 space-y-1.5 max-h-[300px] overflow-y-auto">
+                  {assets.map((a) => (
+                    <AssetRow
+                      key={a.id}
+                      asset={a}
+                      checked={selectedIds.includes(a.id)}
+                      onToggle={() => toggleSelect(a.id)}
+                      onRename={(n) => renameAsset(a.id, n)}
+                      onRemove={() => removeAsset(a.id)}
+                    />
+                  ))}
+                </ul>
 
-          {/* === D. 解析操作栏 === */}
-          {assets.length > 0 && (
-            <div
-              className={cn(
-                "rounded-lg border bg-white p-3.5 transition-all",
-                selectedCount > 0
-                  ? "border-ai-300 ring-2 ring-ai-100/60 shadow-[0_4px_12px_-4px_rgba(139,92,246,0.2)]"
-                  : "border-ink-200",
-              )}
-            >
-              <div className="flex items-center justify-between gap-3 mb-2.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div
+                {/* 底部 AI 解析 CTA：与素材列表无缝相连 */}
+                <div
+                  className={cn(
+                    "flex items-center justify-between gap-3 px-3.5 py-2.5 border-t transition-colors",
+                    selectedCount > 0
+                      ? "border-ai-100 bg-gradient-to-r from-ai-50/60 via-violet-50/40 to-transparent"
+                      : "border-ink-100 bg-ink-50/40",
+                  )}
+                >
+                  <div className="text-[11.5px] text-ink-600 leading-relaxed min-w-0">
+                    {selectedCount === 0 ? (
+                      <span className="text-ink-400">
+                        勾选要解析的素材，AI 将自动生成结构化的子主题草稿
+                      </span>
+                    ) : (
+                      <>
+                        已选 <b className="text-ai-600">{selectedCount}</b> 份素材
+                        <span className="text-ink-400">
+                          {" "}
+                          · 解析后将注入到当前选中的子主题中
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={selectedCount === 0 || parsing}
+                    onClick={() =>
+                      handleParse(
+                        selectedCount > 1 ? "multi-to-one" : "single-to-one",
+                      )
+                    }
                     className={cn(
-                      "w-7 h-7 rounded-md inline-flex items-center justify-center shrink-0",
-                      selectedCount > 0
-                        ? "bg-gradient-to-br from-ai-500 to-violet-500 text-white"
-                        : "bg-ink-100 text-ink-400",
+                      "shrink-0 inline-flex items-center gap-1.5 h-8 px-3.5 rounded-md text-[12.5px] font-semibold transition-all whitespace-nowrap",
+                      selectedCount === 0 || parsing
+                        ? "bg-ink-100 text-ink-400 cursor-not-allowed"
+                        : done
+                          ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
+                          : "bg-gradient-to-br from-ai-500 to-violet-500 text-white shadow-[0_4px_10px_-2px_rgba(139,92,246,0.45)] hover:shadow-[0_6px_14px_-2px_rgba(139,92,246,0.55)] active:translate-y-px",
                     )}
                   >
-                    <Wand2 className="w-3.5 h-3.5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[13px] font-semibold text-ink-900">
-                      AI 解析为 Event
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-ink-500">
-                      {selectedCount === 0 &&
-                        "勾选 1 个或多个素材，然后选择下方的解析模式"}
-                      {singleSelected &&
-                        "已选中 1 个素材，可解析为单个 Event 或按章节拆成多个"}
-                      {multiSelected &&
-                        `已选中 ${selectedCount} 个素材，可合并或一一对应生成 Event`}
-                    </div>
-                  </div>
+                    {parsing ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        AI 正在解析…
+                      </>
+                    ) : done ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        解析完成
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        AI 解析
+                      </>
+                    )}
+                  </button>
                 </div>
-                {parsing && (
-                  <div className="shrink-0 inline-flex items-center gap-1.5 text-[11.5px] text-ai-600">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    AI 正在解析…
-                  </div>
-                )}
-                {done && (
-                  <div className="shrink-0 inline-flex items-center gap-1.5 text-[11.5px] text-emerald-600 font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    解析完成
-                  </div>
-                )}
-              </div>
-
-              {/* 操作按钮组 */}
-              {selectedCount === 0 && (
-                <div className="text-[11.5px] text-ink-400 px-1 py-1">
-                  在上方素材列表中勾选要解析的素材
-                </div>
-              )}
-
-              {singleSelected && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <ActionBtn
-                    primary
-                    disabled={parsing}
-                    onClick={() => handleParse("single-to-one")}
-                    icon={<Layers className="w-4 h-4" />}
-                    title="解析为 1 个 Event"
-                    desc="把整份素材浓缩成一段结构化的 Event 草稿"
-                  />
-                  <ActionBtn
-                    disabled={parsing}
-                    onClick={() => handleParse("single-to-many")}
-                    icon={<Files className="w-4 h-4" />}
-                    title="按章节拆成多个 Event"
-                    desc="按 PPT 页 / PDF 章 / Word H1 智能分段"
-                  />
-                </div>
-              )}
-
-              {multiSelected && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <ActionBtn
-                    primary
-                    disabled={parsing}
-                    onClick={() => handleParse("multi-to-one")}
-                    icon={<Layers className="w-4 h-4" />}
-                    title="合并为 1 个 Event"
-                    desc="AI 综合解析，整合成单条图文并茂的 Event"
-                  />
-                  <ActionBtn
-                    disabled={parsing}
-                    onClick={() => handleParse("multi-to-many")}
-                    icon={<Files className="w-4 h-4" />}
-                    title="每个文件 1 个 Event"
-                    desc={`${selectedCount} 个素材 → ${selectedCount} 个独立 Event`}
-                  />
-                </div>
-              )}
-
-              {/* 注入位置提示 */}
-              {selectedCount > 0 && (
-                <div className="mt-2.5 px-2 py-1.5 rounded-md bg-ai-50/40 border border-ai-100 text-[11px] text-ai-700 inline-flex items-center gap-1.5">
-                  <span className="inline-block w-1 h-1 rounded-full bg-ai-500" />
-                  解析后的内容将注入到当前选中的 Event 中
-                </div>
-              )}
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
       )}
 
@@ -832,65 +790,6 @@ function AssetRow({
         )}
       </div>
     </li>
-  );
-}
-
-/* —— 解析动作按钮 —— */
-
-function ActionBtn({
-  primary,
-  disabled,
-  onClick,
-  icon,
-  title,
-  desc,
-}: {
-  primary?: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "relative text-left rounded-md border px-3 py-2.5 transition-all overflow-hidden flex items-start gap-2.5",
-        primary
-          ? "bg-gradient-to-br from-ai-500 to-violet-500 text-white border-transparent hover:shadow-[0_4px_12px_-2px_rgba(139,92,246,0.4)] disabled:from-ink-300 disabled:to-ink-300 disabled:cursor-not-allowed"
-          : "bg-white border-ink-200 text-ink-800 hover:border-ai-300 hover:bg-ai-50/30 disabled:opacity-50 disabled:cursor-not-allowed",
-      )}
-    >
-      <div
-        className={cn(
-          "shrink-0 w-7 h-7 rounded-md inline-flex items-center justify-center",
-          primary ? "bg-white/15 text-white" : "bg-ai-50 text-ai-600",
-        )}
-      >
-        {icon}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div
-          className={cn(
-            "text-[12.5px] font-semibold leading-tight",
-            primary ? "text-white" : "text-ink-900",
-          )}
-        >
-          {title}
-        </div>
-        <div
-          className={cn(
-            "mt-1 text-[10.5px] leading-relaxed",
-            primary ? "text-white/85" : "text-ink-500",
-          )}
-        >
-          {desc}
-        </div>
-      </div>
-    </button>
   );
 }
 

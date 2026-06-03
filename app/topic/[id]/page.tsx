@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { ArrowLeft, Star, Pencil, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Star, Pencil, Trash2, Plus, Sparkles, MessageSquare } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { DemoSwitcher } from "@/components/DemoSwitcher";
@@ -12,12 +12,20 @@ import { AiInsightPanel } from "@/components/published/AiInsightPanel";
 import { TopicMeta } from "@/components/published/TopicMeta";
 import { TopicEditCard } from "@/components/published/TopicEditCard";
 import { MOCK_TOPIC } from "@/components/published/mockTopic";
+import {
+  InlineCommentsProvider,
+} from "@/components/published/InlineCommentsContext";
+import { InlineCommentPanel } from "@/components/published/InlineCommentPanel";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { uid } from "@/lib/utils";
+import { uid, genAvatar } from "@/lib/utils";
 import { createBlock } from "@/components/editor/factory";
 import { cn } from "@/lib/utils";
 import { MOCK_USERS } from "@/lib/mock";
-import type { PublishedTopic, PublishedEvent } from "@/components/published/types";
+import type {
+  PublishedTopic,
+  PublishedEvent,
+  InlineCommentThread,
+} from "@/components/published/types";
 
 type ViewMode = "author" | "reader";
 
@@ -64,6 +72,7 @@ export default function PublishedTopicPage() {
     authorIds: string[];
     authorRoleDeptId: string;
     tags: string[];
+    topicType: "normal" | "department";
     visibility: import("@/components/topic/TopicVisibilityField").VisibilityValue;
     keyStrategy?: { departmentId: string; strategyId?: string };
   }) => {
@@ -85,9 +94,13 @@ export default function PublishedTopicPage() {
         authors: nextAuthors,
         authorRoleDeptId: next.authorRoleDeptId,
         tags: next.tags,
+        topicType: next.topicType,
         visibility: next.visibility.customIds,
         visibilityMode: next.visibility.mode,
-        keyStrategy: next.keyStrategy?.strategyId ? next.keyStrategy : undefined,
+        keyStrategy:
+          next.topicType === "department" && next.keyStrategy?.strategyId
+            ? next.keyStrategy
+            : undefined,
       };
     });
     setEditingTopic(false);
@@ -173,7 +186,47 @@ export default function PublishedTopicPage() {
     }
   };
 
+  /* —— 右侧栏 Tab：AI 洞察 / 段落评论 —— */
+  const [rightTab, setRightTab] = React.useState<"ai" | "comments">("ai");
+
+  /* —— 段落级评论 Provider 初始数据 —— */
+  const initialInlineThreads = React.useMemo<
+    Record<string, InlineCommentThread[]>
+  >(() => {
+    const map: Record<string, InlineCommentThread[]> = {};
+    topic.events.forEach((ev) => {
+      if (ev.inlineComments && ev.inlineComments.length > 0) {
+        map[ev.id] = ev.inlineComments;
+      }
+    });
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 当前用户（demo：发布者王志恒）
+  const currentUser = React.useMemo(
+    () => ({
+      id: "u-current",
+      name: "王志恒",
+      title: "王志恒",
+      avatar: genAvatar("王志恒"),
+    }),
+    [],
+  );
+
+  // 段落评论总数（用于 Tab 上的 badge）
+  const totalInlineCount = React.useMemo(() => {
+    return topic.events.reduce(
+      (acc, ev) => acc + (ev.inlineComments?.length ?? 0),
+      0,
+    );
+  }, [topic.events]);
+
   return (
+    <InlineCommentsProvider
+      initial={initialInlineThreads}
+      currentUser={currentUser}
+    >
     <div className="h-screen bg-ink-50 flex flex-col overflow-hidden">
       <Header
         extra={
@@ -310,7 +363,7 @@ export default function PublishedTopicPage() {
                   className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-md border border-dashed border-ink-300 bg-white text-[13px] text-ink-600 hover:text-brand-600 hover:border-brand-400 hover:bg-brand-50/40 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
-                  新增事件
+                  新增子主题
                 </button>
               )}
             </div>
@@ -320,9 +373,23 @@ export default function PublishedTopicPage() {
           </div>
         </main>
 
-        {/* 右侧 AI 面板 —— 宽度与编辑页保持一致（380px） */}
+        {/* 右侧栏：Tab 切换 AI 洞察 / 段落评论 —— 宽度 380px */}
         <div className="shrink-0 h-full w-[380px] border-l border-ink-200 bg-white flex flex-col">
-          <AiInsightPanel topic={topic} activeEventId={activeEventId} />
+          <RightSidebarTabs
+            tab={rightTab}
+            onChange={setRightTab}
+            commentsCount={totalInlineCount}
+          />
+          <div className="flex-1 min-h-0">
+            {rightTab === "ai" ? (
+              <AiInsightPanel topic={topic} activeEventId={activeEventId} />
+            ) : (
+              <InlineCommentPanel
+                topic={topic}
+                activeEventId={activeEventId}
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -330,14 +397,14 @@ export default function PublishedTopicPage() {
       <ConfirmDialog
         open={topicDeleteOpen}
         danger
-        title="删除整个话题？"
+        title="删除整个主题？"
         description={
           <>
-            这是话题「{topic.title}」下的全部内容，删除后整个话题将被一同删除，且
+            这是主题「{topic.title}」下的全部内容，删除后整个主题将被一同删除，且
             <span className="text-ink-700">无法恢复</span>。是否继续？
           </>
         }
-        confirmText="删除话题"
+        confirmText="删除主题"
         onCancel={() => setTopicDeleteOpen(false)}
         onConfirm={() => {
           setTopicDeleteOpen(false);
@@ -354,7 +421,7 @@ export default function PublishedTopicPage() {
         description={
           eventDelete ? (
             <>
-              删除「{eventDelete.title || `Event #${eventDelete.index}`}
+              删除「{eventDelete.title || `子主题 #${eventDelete.index}`}
               」将清空其下全部内容，确认删除吗？
             </>
           ) : null
@@ -375,6 +442,80 @@ export default function PublishedTopicPage() {
         }}
       />
     </div>
+    </InlineCommentsProvider>
+  );
+}
+
+/** 右侧栏 Tab 切换器：AI 洞察 / 段落评论 */
+function RightSidebarTabs({
+  tab,
+  onChange,
+  commentsCount,
+}: {
+  tab: "ai" | "comments";
+  onChange: (t: "ai" | "comments") => void;
+  commentsCount: number;
+}) {
+  return (
+    <div className="shrink-0 flex items-stretch border-b border-ink-100">
+      <TabBtn
+        active={tab === "ai"}
+        onClick={() => onChange("ai")}
+        icon={<Sparkles className="w-3.5 h-3.5" strokeWidth={2.4} />}
+        label="AI 洞察"
+      />
+      <TabBtn
+        active={tab === "comments"}
+        onClick={() => onChange("comments")}
+        icon={<MessageSquare className="w-3.5 h-3.5" strokeWidth={2.2} />}
+        label="段落评论"
+        badge={commentsCount > 0 ? commentsCount : undefined}
+      />
+    </div>
+  );
+}
+
+function TabBtn({
+  active,
+  onClick,
+  icon,
+  label,
+  badge,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  badge?: number;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex-1 inline-flex items-center justify-center gap-1.5 h-10 text-[12.5px] font-medium transition-colors relative",
+        active
+          ? "text-brand-700 bg-brand-50/40"
+          : "text-ink-500 hover:text-ink-900 hover:bg-ink-50/60",
+      )}
+    >
+      {icon}
+      {label}
+      {badge !== undefined && (
+        <span
+          className={cn(
+            "inline-flex items-center justify-center min-w-[18px] h-[16px] px-1 rounded-full text-[10px] font-semibold tabular-nums",
+            active
+              ? "bg-brand-100 text-brand-700"
+              : "bg-ink-100 text-ink-600",
+          )}
+        >
+          {badge}
+        </span>
+      )}
+      {active && (
+        <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-brand-500 rounded-t" />
+      )}
+    </button>
   );
 }
 
