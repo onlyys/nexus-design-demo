@@ -6,3 +6,6 @@ node_modules
 # 本地构建/部署产物
 .deploy/
 tsconfig.tsbuildinfo
+
+# 静态导出产物（由 CI 构建并发布到 Pages）
+/out/
