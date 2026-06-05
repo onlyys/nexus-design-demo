@@ -11,7 +11,7 @@ import { Sparkles, Wrench } from "lucide-react";
  */
 export function AiPanelPlaceholder() {
   return (
-    <aside className="w-full h-full bg-white flex flex-col">
+    <aside className="w-full h-full bg-transparent flex flex-col">
       {/* 顶部 Nexus AI 标识 */}
       <div className="flex items-start gap-2.5 px-4 py-3.5 border-b border-ink-100">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-ai-500 to-ai-600 flex items-center justify-center shadow-[0_3px_8px_-2px_rgba(139,92,246,0.45)] shrink-0">

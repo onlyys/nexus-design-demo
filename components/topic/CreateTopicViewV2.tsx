@@ -15,6 +15,7 @@ import {
 } from "@/components/topic/TopicTypeField";
 import {
   TopicVisibilityField,
+  VisibilityCustomInput,
   type VisibilityValue,
 } from "@/components/topic/TopicVisibilityField";
 import { KeyStrategyLinkField } from "@/components/topic/KeyStrategyLinkField";
@@ -469,7 +470,7 @@ export function CreateTopicViewV2({
   }, [events, scrollToEvent]);
 
   return (
-    <div className="h-screen bg-ink-50 flex flex-col overflow-hidden">
+    <div className="h-screen bg-page flex flex-col overflow-hidden">
       <Header userName={userName} userAvatar={userAvatar} extra={headerExtra} />
 
       <div className="flex-1 flex min-h-0">
@@ -479,9 +480,10 @@ export function CreateTopicViewV2({
 
         <main
           id="main-scroll-area-v2"
-          className="flex-1 min-w-0 h-full overflow-y-auto"
+          className="flex-1 min-w-0 max-w-[945px] h-full overflow-y-auto"
         >
-          <div className="w-full px-8 py-6 space-y-4">
+          <div className="w-full px-4 py-4">
+            <div className="bg-white rounded-[16px] shadow-card border border-ink-200/60 px-8 py-6 space-y-4">
             {isEditPublished && (
               <EditPublishedBanner
                 onBack={() =>
@@ -514,8 +516,8 @@ export function CreateTopicViewV2({
             />
 
             {/* Topic 头部卡片 */}
-            <section className="rounded-lg bg-white border border-ink-200 shadow-card overflow-hidden">
-              <div className="px-7 pt-6 pb-5">
+            <section className="overflow-hidden">
+              <div className="pt-2 pb-4">
                 <TitleInput value={title} onChange={setTitle} />
 
                 <div className="mt-3">
@@ -539,12 +541,21 @@ export function CreateTopicViewV2({
                       onChange={setKeyStrategy}
                     />
                   )}
-                  <TopicTagsField value={tagsList} onChange={setTagsList} />
-                  <TopicVisibilityField
-                    value={visibility}
-                    onChange={setVisibility}
-                    authorDeptId={authorRoleDeptId}
-                  />
+                  <div className="flex flex-wrap items-center gap-x-10 gap-y-3">
+                    <TopicVisibilityField
+                      value={visibility}
+                      onChange={setVisibility}
+                      authorDeptId={authorRoleDeptId}
+                    />
+                    <TopicTagsField value={tagsList} onChange={setTagsList} />
+                  </div>
+                  {visibility.mode === "custom" && (
+                    <VisibilityCustomInput
+                      value={visibility}
+                      onChange={setVisibility}
+                      authorDeptId={authorRoleDeptId}
+                    />
+                  )}
                 </div>
               </div>
             </section>
@@ -584,10 +595,11 @@ export function CreateTopicViewV2({
               <span>共 {events.length} 个子主题</span>
               <span>共 {wordCount} 个字</span>
             </footer>
+            </div>
           </div>
         </main>
 
-        <div className="shrink-0 h-full w-[380px] border-l border-ink-200 bg-white flex flex-col">
+        <div className="shrink-0 h-full w-[295px] border-l border-ink-200 bg-page flex flex-col">
           <AiPanelPlaceholder />
         </div>
       </div>

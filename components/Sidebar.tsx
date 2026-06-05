@@ -57,7 +57,7 @@ const GROUPS: SidebarGroup[] = [
  */
 export function Sidebar({ active = "my" }: { active?: string }) {
   return (
-    <aside className="w-[200px] h-full shrink-0 border-r border-ink-200 bg-white flex flex-col">
+    <aside className="w-[200px] h-full shrink-0 border-r border-ink-200 bg-page flex flex-col">
       <div className="px-4 py-4 space-y-5 flex-1 overflow-y-auto">
         {GROUPS.map((g) => (
           <div key={g.label}>

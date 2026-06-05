@@ -9,13 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // 页面底色（Figma color/bg/page）
+        page: "#EBEDF0",
+        // 主色锚定 Figma color/brand/500 = #2563EB
         brand: {
-          DEFAULT: "#1E6DFF",
-          50: "#F0F5FF",
-          100: "#DBE7FF",
+          DEFAULT: "#2563EB",
+          50: "#EFF6FF", // Figma brand/50
+          100: "#DBEAFE",
           500: "#3B82F6",
-          600: "#1E6DFF",
-          700: "#1456D6",
+          600: "#2563EB", // 主操作色（Figma brand/500）
+          700: "#1D4ED8", // hover / active
         },
         ai: {
           DEFAULT: "#7C5CF6",
@@ -25,19 +28,21 @@ const config: Config = {
           500: "#8B5CF6",
           600: "#7C3AED",
         },
+        // 中性色对齐 Figma 灰蓝色阶（color/text/* + color/stroke/* + grayBlue/*）
         ink: {
-          900: "#0F1116",
-          700: "#2F343D",
-          500: "#5B6470",
-          400: "#8B95A1",
-          300: "#C9CFD7",
-          200: "#E5E8ED",
-          100: "#F1F2F4",
-          50: "#FAFAFA",
+          900: "#101114", // text/1
+          700: "#4B5563", // text/2
+          500: "#6B7280", // text/2.5（过渡档）
+          400: "#9CA3AF", // text/3
+          300: "#D1D5DB", // text/4 · stroke/thin
+          200: "#E5E7EB", // stroke/normal
+          100: "#F3F4F6", // stroke/weak · grayBlue/150 · bg/hover
+          50: "#F9FAFB", // grayBlue/50·100
         },
       },
       fontFamily: {
         sans: [
+          "Noto Sans SC",
           "Inter",
           "PingFang SC",
           "-apple-system",

@@ -39,13 +39,7 @@ export function EventCard({
       data-event-id={event.id}
       onFocus={onActivate}
       onMouseDown={onActivate}
-      className={cn(
-        "rounded-lg bg-white border shadow-card transition-colors",
-        active
-          ? "border-brand-300 ring-2 ring-brand-100"
-          : "border-ink-200 hover:border-ink-300",
-        "scroll-mt-24",
-      )}
+      className={cn("rounded-[16px] bg-ink-50 scroll-mt-24")}
     >
       {/* 标题栏 */}
       <div className="flex items-center gap-2 px-6 pt-5 pb-2">

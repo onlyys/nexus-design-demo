@@ -41,72 +41,82 @@ export function AuthorRoleField({
     USER_DEPARTMENTS[0];
 
   return (
-    <div>
-      <div className="flex items-baseline gap-2 mb-1.5">
-        <span className="text-[13.5px] font-semibold text-ink-900">
-          以此岗位发布
-        </span>
-      </div>
+    <div className="flex items-center gap-8">
+      <span className="shrink-0 w-14 text-[14px] leading-[21px] text-ink-900">
+        发布岗位
+      </span>
 
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          "w-full min-h-[36px] px-3 py-1.5 flex items-center justify-between gap-2 rounded-md border bg-white text-left transition-colors",
-          open
-            ? "border-brand-500 ring-2 ring-brand-100"
-            : "border-ink-200 hover:border-ink-300",
-        )}
-      >
-        <span className="inline-flex items-center min-w-0">
-          <span className="truncate text-[12.5px] text-ink-800">
-            {current.path}
-          </span>
-        </span>
-        <ChevronDown
+      <div className="flex-1 min-w-0 relative">
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={() => setOpen((v) => !v)}
           className={cn(
-            "w-4 h-4 text-ink-400 shrink-0 transition-transform",
-            open && "rotate-180",
+            "w-full px-4 py-3 flex items-center justify-between gap-2 rounded-[12px] border bg-white text-left transition-colors",
+            open
+              ? "border-brand-600 ring-2 ring-brand-100"
+              : "border-ink-200 hover:border-ink-300",
           )}
-        />
-      </button>
+        >
+          <span className="inline-flex items-center gap-2 min-w-0">
+            <span className="truncate text-[14px] leading-[21px] text-ink-900">
+              {current.path}
+            </span>
+            {current.isPrimary && (
+              <span className="shrink-0 inline-flex items-center px-1.5 py-px rounded-md bg-brand-50 text-brand-600 text-[11px] leading-[14px]">
+                主岗
+              </span>
+            )}
+          </span>
+          <ChevronDown
+            className={cn(
+              "w-5 h-5 text-ink-400 shrink-0 transition-transform",
+              open && "rotate-180",
+            )}
+          />
+        </button>
 
-      <FloatingMenu
-        open={open}
-        onClose={() => setOpen(false)}
-        anchorRef={triggerRef}
-        align="start"
-        width={menuWidth}
-        maxHeight={320}
-        className="py-1"
-      >
-        {USER_DEPARTMENTS.map((d) => {
-          const selected = d.id === current.id;
-          return (
-            <button
-              key={d.id}
-              type="button"
-              onClick={() => {
-                onChange(d.id);
-                setOpen(false);
-              }}
-              className={cn(
-                "w-full flex items-center gap-2 px-3 py-2 text-left text-[12.5px] hover:bg-brand-50/40 transition-colors",
-                selected && "bg-brand-50/60",
-              )}
-            >
-              <Check
+        <FloatingMenu
+          open={open}
+          onClose={() => setOpen(false)}
+          anchorRef={triggerRef}
+          align="start"
+          width={menuWidth}
+          maxHeight={320}
+          className="py-1 rounded-[12px]"
+        >
+          {USER_DEPARTMENTS.map((d) => {
+            const selected = d.id === current.id;
+            return (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => {
+                  onChange(d.id);
+                  setOpen(false);
+                }}
                 className={cn(
-                  "w-3.5 h-3.5 shrink-0",
-                  selected ? "text-brand-600" : "text-transparent",
+                  "w-full flex items-center gap-2 px-3 py-2 text-left text-[13px] hover:bg-brand-50/40 transition-colors",
+                  selected && "bg-brand-50/60",
                 )}
-              />
-              <span className="truncate text-ink-800">{d.path}</span>
-            </button>
-          );
-        })}
-      </FloatingMenu>
+              >
+                <Check
+                  className={cn(
+                    "w-3.5 h-3.5 shrink-0",
+                    selected ? "text-brand-600" : "text-transparent",
+                  )}
+                />
+                <span className="truncate text-ink-800">{d.path}</span>
+                {d.isPrimary && (
+                  <span className="shrink-0 inline-flex items-center px-1.5 py-px rounded-md bg-brand-50 text-brand-600 text-[11px] leading-[14px]">
+                    主岗
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </FloatingMenu>
+      </div>
     </div>
   );
 }

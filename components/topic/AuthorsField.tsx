@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, X, Search, Lock } from "lucide-react";
+import { Plus, X, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MOCK_USERS } from "@/lib/mock";
 import { cn } from "@/lib/utils";
@@ -81,10 +81,9 @@ export function AuthorsField({ value, onChange, max = 5 }: AuthorsFieldProps) {
               </span>
               {isFirst ? (
                 <span
-                  className="ml-0.5 inline-flex items-center gap-0.5 px-1 py-px rounded-sm bg-brand-100 text-brand-700 text-[10px] leading-none"
+                  className="ml-0.5 inline-flex items-center px-1 py-px rounded-sm bg-brand-100 text-brand-700 text-[10px] leading-none"
                   title="发布者，不可移除"
                 >
-                  <Lock className="w-2.5 h-2.5" strokeWidth={2.4} />
                   发布者
                 </span>
               ) : (

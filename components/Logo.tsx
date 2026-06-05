@@ -25,7 +25,7 @@ export function NexusLogo({
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <rect width="22" height="22" rx="5" fill="#0F1116" />
+          <rect width="22" height="22" rx="5" fill="#101114" />
           {/* 简洁 N */}
           <path
             d="M6.5 15.5V6.5L15.5 15.5V6.5"

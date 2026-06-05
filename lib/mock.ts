@@ -52,7 +52,7 @@ export const RECOMMENDED_TAGS = [
   "合规",
   "经营",
   "技术",
-  "全员行动",
+  "全员",
   "项目",
   "其他",
 ];

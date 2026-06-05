@@ -27,48 +27,46 @@ export function TopicTypeField({ value, onChange }: TopicTypeFieldProps) {
     onChange?.(t);
   };
 
-  const options: { key: TopicType; label: string; desc: string }[] = [
-    {
-      key: "department",
-      label: "关联部门事项主题",
-      desc: "对齐组织目标",
-    },
-    {
-      key: "normal",
-      label: "普通主题",
-      desc: "常规发布",
-    },
+  const options: { key: TopicType; label: string }[] = [
+    { key: "normal", label: "普通Topic" },
+    { key: "department", label: "关联部门事项Topic" },
   ];
 
   return (
-    <div>
-      <div className="flex items-baseline gap-2 mb-2">
-        <span className="text-[13.5px] font-semibold text-ink-900">主题类型</span>
-        <span className="text-[12px] text-ink-400">选择发布性质</span>
-      </div>
+    <div className="flex items-center gap-8">
+      <span className="shrink-0 w-14 text-[14px] leading-[21px] text-ink-900">
+        话题类型
+      </span>
 
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-6 flex-wrap">
         {options.map((opt) => {
           const active = selected === opt.key;
           return (
             <button
               key={opt.key}
+              type="button"
               onClick={() => update(opt.key)}
-              className={cn(
-                "inline-flex items-center gap-1.5 h-8 px-3 rounded-md border text-[12.5px] transition-all whitespace-nowrap",
-                active
-                  ? "border-brand-300 bg-brand-50 text-brand-700 ring-1 ring-brand-200 font-medium"
-                  : "border-ink-200 bg-white text-ink-700 hover:bg-ink-50 hover:border-ink-300",
-              )}
+              className="group inline-flex items-center gap-1.5"
             >
-              <span>{opt.label}</span>
               <span
                 className={cn(
-                  "text-[11px]",
-                  active ? "text-brand-500" : "text-ink-400",
+                  "shrink-0 w-[18px] h-[18px] rounded-full border-[1.5px] flex items-center justify-center transition-colors",
+                  active
+                    ? "border-brand-600"
+                    : "border-ink-300 group-hover:border-ink-400",
                 )}
               >
-                · {opt.desc}
+                {active && (
+                  <span className="w-2.5 h-2.5 rounded-full bg-brand-600" />
+                )}
+              </span>
+              <span
+                className={cn(
+                  "text-[14px] leading-[21px] transition-colors",
+                  active ? "text-ink-900" : "text-ink-700",
+                )}
+              >
+                {opt.label}
               </span>
             </button>
           );

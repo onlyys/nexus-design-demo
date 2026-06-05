@@ -17,25 +17,26 @@
   }
 
   body {
-    background-color: #f7f8fa;
-    color: #111827;
-    font-family: Inter, "PingFang SC", -apple-system, BlinkMacSystemFont, "Segoe UI",
-      "Helvetica Neue", Arial, sans-serif;
+    /* Figma color/bg/page = #EBEDF0；正文色 Figma color/text/1 = #101114 */
+    background-color: #ebedf0;
+    color: #101114;
+    font-family: "Noto Sans SC", Inter, "PingFang SC", -apple-system, BlinkMacSystemFont,
+      "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   }
 
-  /* Subtle scrollbars */
+  /* Subtle scrollbars（灰蓝） */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(17, 24, 39, 0.12);
+    background: rgba(16, 17, 20, 0.14);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(17, 24, 39, 0.22);
+    background: rgba(16, 17, 20, 0.24);
     background-clip: padding-box;
   }
   ::-webkit-scrollbar-track {
